@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <h1 class="logo">A simple markdown file viewer</h1>
+            <div class="stats">
+                <span class="hostname">Node: {{ hostname }}</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Content Library</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    {% for folder in folders %}
+                    <li class="nav-item {% if folder == active_folder %}active{% endif %}">
+                        <a href="{{ url_for('index', foldername=folder) }}">
+                            <span class="icon">📁</span>
+                            <span class="label">{{ folder }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </aside>
+
+        <section class="content-area">
+            {% if content %}
+                <article class="markdown-body">
+                    {{ content|safe }}
+                </article>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📖</div>
+                    <h2>Welcome to the Viewer</h2>
+                    <p>Select a folder from the library on the left to start reading.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

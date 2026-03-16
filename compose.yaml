@@ -1,0 +1,10 @@
+# Docker Compose file for Markdown Viewer App
+services:
+  web-fe:
+    build: .
+    ports:
+      - "5001:8080"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
