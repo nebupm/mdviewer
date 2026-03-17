@@ -10,8 +10,17 @@ To deploy this application in a Minikube cluster, follow these steps:
 
 Since Minikube needs access to the container image, build it and push it to your registry:
 
+You can either build it from local or build from github repo.
+
 ```bash
 docker build -t deneasta/mdviewer:latest .
+or 
+docker build -t deneasta/mdviewer:latest https://github.com/nebupm/mdviewer.git
+```
+
+Once its successfully build on your local setup, push this to the docker hub.
+
+```bash
 docker push deneasta/mdviewer:latest
 ```
 
