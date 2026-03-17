@@ -599,7 +599,7 @@ Swarm initialized: current node (b5cn8oh2r3kttu2uzx7jmw7rs) is now a manager.
 
 To add a worker to this swarm, run the following command:
 
-    docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-70hkx60w2mmuxtnb3vfrcfnzy 192.168.2.17:2377
+    docker swarm join --token SWMTOKEN 192.168.2.17:2377
 
 To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
 ubuntu@mgr1:~$
@@ -649,7 +649,7 @@ Example:
 ubuntu@mgr1:~$ docker swarm join-token manager
 To add a manager to this swarm, run the following command:
 
-    docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-7xtjy9rnhbn7f0padxd1z1mwa 192.168.2.17:2377
+    docker swarm join --token SWMTOKEN 192.168.2.17:2377
 
 ubuntu@mgr1:~$
 ```
@@ -660,7 +660,7 @@ Now, the new node mgr2 is now part of the. swarm.
 example:
 
 ```bash
-ubuntu@mgr2:~$ docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-7xtjy9rnhbn7f0padxd1z1mwa 192.168.2.17:2377
+ubuntu@mgr2:~$ docker swarm join --token SWMTOKEN 192.168.2.17:2377
 This node joined a swarm as a manager.
 ubuntu@mgr2:~$
 ```
@@ -668,7 +668,7 @@ ubuntu@mgr2:~$
 Again, we add another manager to the cluster using the same command as above.
 
 ```bash
-ubuntu@mgr3:~$     docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-7xtjy9rnhbn7f0padxd1z1mwa 192.168.2.17:2377
+ubuntu@mgr3:~$     docker swarm join --token SWMTOKEN 192.168.2.17:2377
 This node joined a swarm as a manager.
 ubuntu@mgr3:~$
 ```
@@ -692,7 +692,7 @@ Example:
 ubuntu@mgr1:~$ docker swarm join-token worker
 To add a worker to this swarm, run the following command:
 
-    docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-70hkx60w2mmuxtnb3vfrcfnzy 192.168.2.17:2377
+    docker swarm join --token SWMTOKEN 192.168.2.17:2377
 
 ubuntu@mgr1:~$
 ```
@@ -702,7 +702,7 @@ Now, we can go to the Worker Node : wrk1 and run the above command.
 Example:
 
 ```bash
-ubuntu@wrk1:~$ docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-70hkx60w2mmuxtnb3vfrcfnzy 192.168.2.17:2377
+ubuntu@wrk1:~$ docker swarm join --token SWMTOKEN 192.168.2.17:2377
 This node joined a swarm as a worker.
 ubuntu@wrk1:~$
 ```
@@ -710,7 +710,7 @@ ubuntu@wrk1:~$
 We run the same command on worker node2: wrk2
 
 ```bash
-ubuntu@wrk2:~$ docker swarm join --token SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-70hkx60w2mmuxtnb3vfrcfnzy 192.168.2.17:2377
+ubuntu@wrk2:~$ docker swarm join --token SWMTOKEN 192.168.2.17:2377
 This node joined a swarm as a worker.
 ubuntu@wrk2:~$
 ```
@@ -807,7 +807,7 @@ If we check the swarm tokens
 
 ```bash
 ubuntu@mgr1:~$ docker swarm join-token worker --quiet
-SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-70hkx60w2mmuxtnb3vfrcfnzy
+SWMTOKEN
 ubuntu@mgr1:~$ docker swarm join-token manager --quiet
 SWMTKN-1-5ehgrd25f68k0i3n56gwvn5n4bwn87g918fol6p4imbro19js6-7xtjy9rnhbn7f0padxd1z1mwa
 ubuntu@mgr1:~$
