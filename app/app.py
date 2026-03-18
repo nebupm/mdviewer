@@ -13,6 +13,7 @@ CONTENT_DIR = os.path.join(os.path.dirname(__file__), 'content')
 @app.route("/<foldername>")
 def index(foldername=None):
     hostname = socket.gethostname()
+    from_search = request.args.get('from_search')
     
     # Get list of folders in content directory
     if not os.path.exists(CONTENT_DIR):
@@ -53,7 +54,8 @@ def index(foldername=None):
                            content=content_html,
                            active_folder=foldername,
                            search_results=None,
-                           search_query=None)
+                           search_query=None,
+                           from_search=from_search)
 
 @app.route("/search")
 def search():

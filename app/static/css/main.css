@@ -330,3 +330,31 @@ body {
     text-align: center;
     margin-top: 4rem;
 }
+
+/* Navigation Styles */
+.search-nav-bar {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-button:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}

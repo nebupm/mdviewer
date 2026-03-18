@@ -53,6 +53,14 @@
         </aside>
 
         <section class="content-area">
+            {% if from_search %}
+                <div class="search-nav-bar">
+                    <button onclick="history.back()" class="back-button">
+                        <span class="icon">⬅️</span> Back to search results
+                    </button>
+                </div>
+            {% endif %}
+
             {% if search_query %}
                 <div class="search-results-page">
                     <h2>Search Results for "{{ search_query }}"</h2>
@@ -62,7 +70,7 @@
                         <ul class="results-list">
                             {% for result in search_results %}
                             <li class="result-item">
-                                <a href="{{ url_for('index', foldername=result.folder) }}#{{ result.file_id }}" class="result-link">
+                                <a href="{{ url_for('index', foldername=result.folder, from_search=1) }}#{{ result.file_id }}" class="result-link">
                                     <span class="result-folder">{{ result.folder }}</span> / <span class="result-file">{{ result.file }}</span>
                                 </a>
                                 <p class="result-snippet">{{ result.snippet|safe }}</p>
