@@ -8,6 +8,7 @@ This is a simple app to view markdown files.
 - **Contextual Highlights:** View search results with text snippets and highlighted keywords for quick identification.
 - **Match Counter:** Automatically calculates how many unique content pages (folders) contain your search term.
 - **Deep Linking:** Clicking a search result takes you directly to the specific file within its folder using automatic anchor points.
+- **Return to Search:** A smart navigation bar appears when viewing content from a search result, allowing you to return to your exact search position with one click.
 - **GitOps Ready:** Fully integrated with GitHub Actions and Argo CD for automated builds and deployments.
 
 ## Kubernetes Deployment (Minikube)
