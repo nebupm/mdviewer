@@ -51,7 +51,9 @@ def index(foldername=None):
                            hostname=hostname, 
                            folders=folders, 
                            content=content_html,
-                           active_folder=foldername)
+                           active_folder=foldername,
+                           search_results=None,
+                           search_query=None)
 
 @app.route("/search")
 def search():

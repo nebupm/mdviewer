@@ -53,7 +53,7 @@
         </aside>
 
         <section class="content-area">
-            {% if search_query is not none %}
+            {% if search_query %}
                 <div class="search-results-page">
                     <h2>Search Results for "{{ search_query }}"</h2>
                     <p class="match-info">Found in <strong>{{ match_count }}</strong> pages (folders).</p>
