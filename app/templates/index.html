@@ -24,8 +24,22 @@
             <div class="sidebar-header">
                 <h2>Content Library</h2>
             </div>
+            
+            <div class="search-container">
+                <form action="{{ url_for('search') }}" method="get">
+                    <input type="text" name="q" placeholder="Search content..." value="{{ search_query or '' }}" class="search-input">
+                    <button type="submit" class="search-button">Search</button>
+                </form>
+            </div>
+
             <nav class="sidebar-nav">
                 <ul>
+                    <li class="nav-item {% if not active_folder and not search_results %}active{% endif %}">
+                        <a href="{{ url_for('index') }}">
+                            <span class="icon">🏠</span>
+                            <span class="label">Home</span>
+                        </a>
+                    </li>
                     {% for folder in folders %}
                     <li class="nav-item {% if folder == active_folder %}active{% endif %}">
                         <a href="{{ url_for('index', foldername=folder) }}">
@@ -39,7 +53,27 @@
         </aside>
 
         <section class="content-area">
-            {% if content %}
+            {% if search_query is not none %}
+                <div class="search-results-page">
+                    <h2>Search Results for "{{ search_query }}"</h2>
+                    <p class="match-info">Found in <strong>{{ match_count }}</strong> pages (folders).</p>
+                    
+                    {% if search_results %}
+                        <ul class="results-list">
+                            {% for result in search_results %}
+                            <li class="result-item">
+                                <a href="{{ url_for('index', foldername=result.folder) }}#{{ result.file_id }}" class="result-link">
+                                    <span class="result-folder">{{ result.folder }}</span> / <span class="result-file">{{ result.file }}</span>
+                                </a>
+                                <p class="result-snippet">{{ result.snippet|safe }}</p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-results">No matches found.</p>
+                    {% endif %}
+                </div>
+            {% elif content %}
                 <article class="markdown-body">
                     {{ content|safe }}
                 </article>
@@ -47,7 +81,7 @@
                 <div class="empty-state">
                     <div class="empty-icon">📖</div>
                     <h2>Welcome to the Viewer</h2>
-                    <p>Select a folder from the library on the left to start reading.</p>
+                    <p>Select a folder from the library on the left or use the search box to find content.</p>
                 </div>
             {% endif %}
         </section>
