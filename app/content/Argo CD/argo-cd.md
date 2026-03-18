@@ -265,7 +265,7 @@ metadata:
 stringData:
   url: https://github.com/nebupm/test_lab.git
   username: nebupm
-  password: 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
+  password: github_pat_token
 ```
 
 Call this file : ```github-repo.yaml```
