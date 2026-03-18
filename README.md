@@ -38,6 +38,7 @@ Then, deploy the application and service to your cluster:
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 ```
+
 #### Explanation of k8s/service.yaml
 
 ##### 🧩 Understanding the `ports` Section in a Kubernetes Service (NodePort)
@@ -182,10 +183,10 @@ spec:
 
 ##### 🔍 Core Components
 
-*   **`replicas: 1`**: Tells Kubernetes to ensure exactly one instance of your app is running at all times.
-*   **`selector`**: Defines how the Deployment finds the Pods it manages. It looks for Pods with the label `app: mdviewer`.
-*   **`template`**: This is the blueprint for the Pods. The `labels` here must match the `selector` above.
-*   **`containerPort: 8080`**: Tells Kubernetes that the application inside the container is listening on port 8080.
+* **`replicas: 1`**: Tells Kubernetes to ensure exactly one instance of your app is running at all times.
+* **`selector`**: Defines how the Deployment finds the Pods it manages. It looks for Pods with the label `app: mdviewer`.
+* **`template`**: This is the blueprint for the Pods. The `labels` here must match the `selector` above.
+* **`containerPort: 8080`**: Tells Kubernetes that the application inside the container is listening on port 8080.
 
 ***
 
@@ -194,19 +195,21 @@ spec:
 The `resources` section is critical for cluster stability and ensuring your app has what it needs to perform.
 
 ###### **1. `requests` — Guaranteed Resources**
-*   This is the **minimum amount** of resources Kubernetes guarantees to the container.
-*   The scheduler uses this value to decide which node to place the Pod on.
-*   In your YAML:
-    *   `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
-    *   `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
+
+* This is the **minimum amount** of resources Kubernetes guarantees to the container.
+* The scheduler uses this value to decide which node to place the Pod on.
+* In your YAML:
+    * `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
+    * `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
 
 ###### **2. `limits` — Maximum Allowed Resources**
-*   This is the **hard ceiling**. The container cannot consume more than this amount.
-*   **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
-*   **Memory Limit**: If reached, the container is **OOM Killed** (Out of Memory) and restarted by Kubernetes.
-*   In your YAML:
-    *   `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
-    *   `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
+
+* This is the **hard ceiling**. The container cannot consume more than this amount.
+* **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
+* **Memory Limit**: If reached, the container is **OOM Killed** (Out of Memory) and restarted by Kubernetes.
+* In your YAML:
+    * `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
+    * `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
 
 ***
 
@@ -259,19 +262,22 @@ spec:
 ##### 🔍 Key Sections
 
 ###### **1. `source` — Where the code lives**
-*   **`repoURL`**: The URL of the Git repository containing your manifests.
-*   **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s/` folder).
-*   **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
+
+* **`repoURL`**: The URL of the Git repository containing your manifests.
+* **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s/` folder).
+* **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
 
 ###### **2. `destination` — Where the app goes**
-*   **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
-*   **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
+
+* **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
+* **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
 
 ###### **3. `syncPolicy` — Automation & GitOps**
-*   **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
-    *   **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
-    *   **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
-*   **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
+
+* **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
+    * **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
+    * **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
+* **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
 
 ***
 
@@ -321,18 +327,97 @@ Check the application logs for any startup errors:
 kubectl logs -l app=mdviewer -n mdviewer
 ```
 
-### Access the Application
+## Accessing the Application
 
-Get the URL to access the app in your browser:
+Once the application is deployed and the pods are running, you can access the web interface using one of the following methods:
+
+### Method 1: Using Minikube Service (Recommended)
+
+This is the easiest way to get a clickable URL that automatically handles the network mapping for you.
 
 ```bash
 minikube service mdviewer-svc -n mdviewer --url
 ```
 
-Alternatively, use the NodePort directly (defined as `30080`):
+### Method 2: Kubernetes Port Forwarding
+
+If the service URL is not reachable or you prefer a stable localhost address, use port-forwarding to map the service directly to your machine.
 
 ```bash
-# Get Minikube IP
-minikube ip
-# Visit http://<minikube-ip>:30080
+# This maps your local port 8080 to the Service port 80
+kubectl port-forward svc/mdviewer-svc -n mdviewer 8080:80
 ```
+
+Then visit: **<http://localhost:8080>** in your browser.
+
+### Method 3: Direct NodePort Access (macOS/Docker Limitations)
+
+On macOS/Windows using the `docker` driver, the NodePort is exposed on the Minikube node (container) but is **not directly routable** from your host machine.
+
+To make it work, you must start a tunnel in a separate terminal:
+
+```bash
+# This exposes the NodePort to your host
+minikube tunnel
+```
+
+Once the tunnel is running, you can access the app at: **http://$(minikube ip):30080**
+
+## Troubleshooting
+
+### Issue: "Failed to load live state: namespace 'mdviewer' for Deployment 'mdviewer' is not managed"
+
+This error occurs when Argo CD is configured to only manage specific namespaces on a cluster, and the target namespace (in this case, `mdviewer`) is not in that permitted list.
+
+#### 🔍 Diagnosis (Root Cause Analysis)
+
+1. **Check Application Status**:
+
+    ```bash
+    kubectl get application -n argocd mdviewer-app -o yaml
+    ```
+
+    Confirm the error message is present in the `status.conditions` block.
+
+2. **Check Cluster Management Scope**:
+    Verify if the cluster is restricted to specific namespaces using the Argo CD CLI:
+
+    ```bash
+    argocd cluster list
+    ```
+
+    If you see `(1 namespaces)` next to the server URL (e.g., `https://kubernetes.default.svc`), it means management is restricted.
+
+3. **Inspect Cluster Secret**:
+    Find the secret that stores the cluster configuration:
+
+    ```bash
+    kubectl get secrets -n argocd -l argocd.argoproj.io/secret-type=cluster
+    ```
+
+    If you inspect the YAML, a `namespaces` field under `data` indicates that restricted management is active.
+
+#### 🛠️ Remedial Action
+
+To allow Argo CD to manage all namespaces on the cluster (including `mdviewer`), remove the restriction from the cluster secret:
+
+1. **Patch the Cluster Secret**:
+    Replace `<SECRET_NAME>` with the name found in the previous step:
+
+    ```bash
+    kubectl patch secret <SECRET_NAME> -n argocd --type='json' -p='[{"op": "remove", "path": "/data/namespaces"}]'
+    ```
+
+2. **Verify the Change**:
+    Ensure the namespace count is no longer shown in the cluster list:
+
+    ```bash
+    argocd cluster list
+    ```
+
+3. **Trigger a Hard Refresh**:
+    Force Argo CD to reconcile the application with the new permissions:
+
+    ```bash
+    kubectl patch application mdviewer-app -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+    ```
