@@ -102,7 +102,7 @@ Use cases for GitOps
 2. Repository Server : It maintains a local cache of the git repo holding the app manifests
 3. Application Controller : its a K8s controller that monitors running apps and compares the current live state against the desired state in the git repo.
 
-![Components Diagram](images/image.png)
+![Components Diagram](image.png)
 
 Services in Argo CD
 
@@ -128,7 +128,7 @@ Non HA
 HA
 Core Install
 
-![Install Types](images/image-1.png)
+![Install Types](image-1.png)
 
 Namespace Level is common production type install.
 Cluster Level is less common.
@@ -241,7 +241,7 @@ Example:
 
 ```bash
 [13-03-2026][11:50:52][√][argo-cd]$ kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 --decode; echo
-SuperStrongPassword
+KLc0fKwwZGmAGhu1
 [13-03-2026][11:51:59][√][argo-cd]$
 ```
 
@@ -265,7 +265,7 @@ metadata:
 stringData:
   url: https://github.com/nebupm/test_lab.git
   username: nebupm
-  password: github_pat_token
+  password: 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
 ```
 
 Call this file : ```github-repo.yaml```
@@ -275,6 +275,7 @@ Call this file : ```github-repo.yaml```
 Run the command: ```kubectl apply -f github-repo.yaml```
 
 Example:
+
 ```bash
 [13-03-2026][12:06:29][√][argo-cd]$ kubectl apply -f github-repo.yaml
 secret/my-github-repo created
@@ -288,51 +289,138 @@ For windows, use the command ```choco install argocd-cli```
 
 ### Cli commands
 
-Some common commands
+Some common commands and its outputs on the local minikube environment,
 
-argocd login
-argocd account
-argocd proj
-argocd app
-argocd repo
-argocd cluster
-argocd version
-argocd-util
+#### argocd login
 
-First you need to login to the local minikube instance of argocd on your server.
-This is done by passing the url (localhost:8080) and the admin creds.
-Details of the command
-
-Get the admin credentials : ```kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 --decode; echo```
-
-Run the login command : ```argocd login localhost:8080 --username admin --password <ARGOCD PASSWORD from previous Command> --insecure```
+This command is used for logging into the argocd api server.
+You need to pass the credentials to the commabnd line.
+Getting the admin credentials from the argocd cluster `kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 --decode; echo`
+Once you have the credentials, then run login command.
+`argocd login localhost:8080 --username admin --password <ARGOCD Admin Pasword> --insecure`
 
 Example:
+
 ```bash
-[16-03-2026][16:45:26][√][gitops]$ argocd login localhost:8080 --username admin --password $argocd_pass --insecure
+[18-03-2026][12:03:19][√][mdviewer][main]$ argocd login localhost:8080 --username admin --password $(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 --decode; echo) --insecure
 'admin:login' logged in successfully
 Context 'localhost:8080' updated
-[16-03-2026][16:45:34][√][gitops]$
+[18-03-2026][12:06:13][√][mdviewer][main]$
 ```
 
-Run any command. Example : ```argocd account list```
+#### argocd account
+
+This command is used to manage argocd accounts. You can list the accounts, create new accounts, delete accounts etc.
+To list the user accounts use the command `argocd account list`
+
+Example:
+
+```bash
+[18-03-2026][12:06:13][√][mdviewer][main]$ argocd account list
+NAME   ENABLED  CAPABILITIES
+admin  true     login
+[18-03-2026][12:06:54][√][mdviewer][main]$
+```
+
+#### argocd proj
+
+This command is used to manage argocd projects. You can list the projects, create new projects, delete projects etc.
+To list the projects use the command `argocd proj list`
+
+Example:
+
+```bash
+[18-03-2026][12:09:45][√][mdviewer][main]$ argocd proj list
+NAME     DESCRIPTION  DESTINATIONS  SOURCES  CLUSTER-RESOURCE-WHITELIST  NAMESPACE-RESOURCE-BLACKLIST  SIGNATURE-KEYS  ORPHANED-RESOURCES  DESTINATION-SERVICE-ACCOUNTS
+default               *,*           *        */*                         <none>                        <none>          disabled            <none>
+[18-03-2026][12:09:49][√][mdviewer][main]$
+```
+
+#### argocd app
+
+This command is used to manage argocd applications. You can list the applications, create new applications, delete applications etc.
+
+Example:
+
+```bash
+[18-03-2026][12:10:59][√][mdviewer][main]$ argocd app list
+NAME                 CLUSTER                         NAMESPACE  PROJECT  STATUS  HEALTH   SYNCPOLICY  CONDITIONS  REPO                                    PATH  TARGET
+argocd/mdviewer-app  https://kubernetes.default.svc  mdviewer   default  Synced  Healthy  Auto-Prune  <none>      https://github.com/nebupm/mdviewer.git  k8s   HEAD
+[18-03-2026][12:11:03][√][mdviewer][main]$
+```
+
+#### argocd repo
+
+This command is used to manage argocd repositories. You can list the repositories, create new repositories, delete repositories etc.
+
+Example:
+
+```bash
+[18-03-2026][12:11:03][√][mdviewer][main]$ argocd repo list
+TYPE  NAME  REPO                                    INSECURE  OCI    LFS    CREDS  STATUS      MESSAGE  PROJECT
+git         https://github.com/nebupm/mdviewer.git  false     false  false  false  Successful
+[18-03-2026][12:11:52][√][mdviewer][main]$
+```
+
+#### argocd cluster
+
+This command is used to manage argocd clusters. You can list the clusters, create new clusters, delete clusters etc.
+In this setup we are using in-cluster, this means the cluster is the same as the argocd k8s cluster. It is also possible to link up argocd to external cluster.
+
+Example:
+
+```bash
+[18-03-2026][12:12:28][√][mdviewer][main]$ argocd cluster list
+SERVER                          NAME        VERSION  STATUS      MESSAGE  PROJECT
+https://kubernetes.default.svc  in-cluster  v1.35.1  Successful
+[18-03-2026][12:12:30][√][mdviewer][main]$
+```
+
+#### argocd version
+This command is used to check the version of argocd cli and server.
 
 Example:
 ```bash
-[16-03-2026][16:45:38][√][gitops]$ argocd account list
-NAME   ENABLED  CAPABILITIES
-admin  true     login
-[16-03-2026][16:45:43][√][gitops]$
+[18-03-2026][12:12:30][√][mdviewer][main]$ argocd version
+argocd: v3.3.4
+  BuildDate: 2026-03-16T14:23:36Z
+  GitCommit: 34ccdfc3d5235b0184eb910b8ba4edcd81ef8f03
+  GitTreeState: clean
+  GitTag: v3.3.4
+  GoVersion: go1.26.1
+  Compiler: gc
+  Platform: darwin/arm64
+argocd-server: v3.3.3
+  BuildDate: 2026-03-09T15:27:57Z
+  GitCommit: ff239dcd20c578ecbf5265914cdc5c2f98d85535
+  GitTreeState: clean
+  GitTag: v3.3.3
+  GoVersion: go1.25.5
+  Compiler: gc
+  Platform: linux/arm64
+  Kustomize Version: v5.8.1 2026-02-09T16:15:27Z
+  Helm Version: v3.19.4+g7cfb6e4
+  Kubectl Version: v0.34.0
+  Jsonnet Version: v0.21.0
+[18-03-2026][12:14:13][√][mdviewer][main]$
 ```
+
+#### argocd-util
+This command is used to run argocd utility commands. You can use this command to run various utility commands such as repo-server, dex-server, notifications-controller etc.
+However, this utility is not packaged with argocd version 2.4 onwards. You can use the `argocd admin` to get similar results
+You can use
+- argocd admin export instead of argocd-util export
+- argocd admin migrate instead of internal DB migrations
+- Kubernetes-native operations instead of ArgoCD internals
 
 ## Register a Cluster
 
-By default with an ArgoCD deployment, the cluster it is running on (in this case a minikube k8s cluster) is set as "in-cluster" (https://kubernetes.default.svc)
+By default with an ArgoCD deployment, the cluster it is running on (in this case a minikube k8s cluster) is set as "in-cluster" (<https://kubernetes.default.svc>)
 When any app is deployed, you can deploy them to the "in-cluster" or an external k8s cluster.
 If you want to use an external cluster, then you will need to register an external k8s cluster to deploy apps.
 To register an external cluster, you need to run the command ```argocd cluster add <context-name>```
 
-## Commands to get details from the k8s pod.
+## Commands to get details from the k8s pod
 
 kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-repo-server
 kubectl get pods -n argocd
@@ -354,6 +442,7 @@ This example demonstrates how to deploy and manage the `mdviewer` application us
 Create a directory for your manifests and define the Deployment and Service.
 
 **Deployment (`k8s/deployment.yaml`):**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -386,6 +475,7 @@ spec:
 ```
 
 **Service (`k8s/service.yaml`):**
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -449,6 +539,7 @@ spec:
 ```
 
 Apply the application manifest:
+
 ```bash
 kubectl apply -f mdviewer-app.yaml
 ```
@@ -456,12 +547,13 @@ kubectl apply -f mdviewer-app.yaml
 ### 5. Verify and Access
 
 Check the status of the application:
+
 ```bash
 argocd app get mdviewer-app
 ```
 
 Access the application in Minikube:
+
 ```bash
 minikube service mdviewer-svc --url
 ```
-
