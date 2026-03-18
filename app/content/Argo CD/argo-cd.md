@@ -245,8 +245,8 @@ KLc0fKwwZGmAGhu1
 [13-03-2026][11:51:59][√][argo-cd]$
 ```
 
-Username: admin
-Password : <Above command Output>
+>Username: admin
+>Password : <Above command Output>
 
 ### Connect GitHub Repo via kubectl (YAML)
 
@@ -376,10 +376,12 @@ https://kubernetes.default.svc  in-cluster  v1.35.1  Successful
 [18-03-2026][12:12:30][√][mdviewer][main]$
 ```
 
-#### argocd version
+####  argocd version
+
 This command is used to check the version of argocd cli and server.
 
 Example:
+
 ```bash
 [18-03-2026][12:12:30][√][mdviewer][main]$ argocd version
 argocd: v3.3.4
@@ -406,9 +408,11 @@ argocd-server: v3.3.3
 ```
 
 #### argocd-util
+
 This command is used to run argocd utility commands. You can use this command to run various utility commands such as repo-server, dex-server, notifications-controller etc.
 However, this utility is not packaged with argocd version 2.4 onwards. You can use the `argocd admin` to get similar results
 You can use
+
 - argocd admin export instead of argocd-util export
 - argocd admin migrate instead of internal DB migrations
 - Kubernetes-native operations instead of ArgoCD internals

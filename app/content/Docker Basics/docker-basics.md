@@ -545,12 +545,3 @@ losicmy6eybw   webcounter_web-fe.4   deneasta/dnat:swarm-demo   node5     Runnin
 twx7b19dlpry   webcounter_web-fe.5   deneasta/dnat:swarm-demo   node4     Running         Running 3 minutes ago
 ubuntu@node1:~/node1/swarm$
 ```
-
-Docker Deep Dive
-
-Getting started with Kubernetes.
-
-
-
-
-
