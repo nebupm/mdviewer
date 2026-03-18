@@ -291,6 +291,100 @@ spec:
 
 ***
 
+## CI/CD & GitOps with GitHub Actions
+
+This project uses GitHub Actions to automate the build and deployment process. Whenever code is pushed to the `main` branch, the pipeline automatically builds a new Docker image and updates the Kubernetes manifests.
+
+### GitHub Actions Workflow (`.github/workflows/deploy.yml`)
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - 'k8s/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: deneasta/mdviewer:${{ github.sha }}
+
+      - name: Update Kubernetes Deployment
+        run: |
+          sed -i 's|image: deneasta/mdviewer:.*|image: deneasta/mdviewer:${{ github.sha }}|' k8s/deployment.yaml
+          
+      - name: Commit and Push manifest change
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add k8s/deployment.yaml
+          git commit -m "chore: update image tag to ${{ github.sha }} [skip ci]"
+          git push
+```
+
+***
+
+### 🔍 How the Pipeline Works
+
+The workflow implements a **GitOps** flow:
+
+1.  **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s/`).
+2.  **Checkout**: It pulls the latest code from the repository.
+3.  **Docker Build & Push**:
+    *   It logs into Docker Hub using secrets.
+    *   It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
+4.  **Manifest Update (`sed`)**:
+    *   The pipeline modifies `k8s/deployment.yaml` directly, replacing the old image tag with the new one.
+5.  **Git Commit & Push**:
+    *   The updated manifest is committed back to the repository by the `github-actions[bot]`.
+    *   The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
+6.  **Argo CD Sync**:
+    *   Because Argo CD is watching the `k8s/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
+    *   Argo CD automatically pulls the new image into your Kubernetes cluster.
+
+### 🛠️ Setup Requirements
+
+To use this workflow, you must configure the following:
+
+#### 1. GitHub Secrets
+Go to **Settings > Secrets and variables > Actions**. Ensure you are on the **Secrets** tab (this is for sensitive data) and click **New repository secret** to add:
+*   `DOCKERHUB_USERNAME`: Your Docker Hub username.
+*   `DOCKERHUB_TOKEN`: A Personal Access Token from Docker Hub.
+
+*Note: Do not add these to the "Variables" tab, as secrets are masked in logs and more secure.*
+
+#### 2. Workflow Permissions (Critical)
+The workflow uses the built-in `GITHUB_TOKEN` to commit manifest changes. By default, this token is often restricted to read-only. **You must enable write access:**
+1.  Navigate to your repository on GitHub.
+2.  Go to **Settings > Actions > General**.
+3.  Scroll down to the **Workflow permissions** section.
+4.  Select **Read and write permissions**.
+5.  Click **Save**.
+
+***
+
 ## Verification Commands
 
 Use these commands to check if the application is installed and running correctly:
