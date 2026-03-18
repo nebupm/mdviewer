@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: mdviewer
-        image: deneasta/mdviewer:55f885360f292fe1ad068b729fa84fe6c4ee6454
+        image: deneasta/mdviewer:543e34a946b39dedebaf6023e4db5c577398c529
         ports:
         - containerPort: 8080
         resources:
