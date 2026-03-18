@@ -32,7 +32,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: deneasta/mdviewer:${{ github.sha }}
+          tags: |
+            deneasta/mdviewer:${{ github.sha }}
+            deneasta/mdviewer:latest
 
       - name: Update Kubernetes Deployment
         run: |

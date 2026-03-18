@@ -332,7 +332,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: deneasta/mdviewer:${{ github.sha }}
+          tags: |
+            deneasta/mdviewer:${{ github.sha }}
+            deneasta/mdviewer:latest
 
       - name: Update Kubernetes Deployment
         run: |
@@ -353,38 +355,42 @@ jobs:
 
 The workflow implements a **GitOps** flow:
 
-1.  **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s/`).
-2.  **Checkout**: It pulls the latest code from the repository.
-3.  **Docker Build & Push**:
-    *   It logs into Docker Hub using secrets.
-    *   It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
-4.  **Manifest Update (`sed`)**:
-    *   The pipeline modifies `k8s/deployment.yaml` directly, replacing the old image tag with the new one.
-5.  **Git Commit & Push**:
-    *   The updated manifest is committed back to the repository by the `github-actions[bot]`.
-    *   The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
-6.  **Argo CD Sync**:
-    *   Because Argo CD is watching the `k8s/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
-    *   Argo CD automatically pulls the new image into your Kubernetes cluster.
+1. **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s/`).
+2. **Checkout**: It pulls the latest code from the repository.
+3. **Docker Build & Push**:
+    * It logs into Docker Hub using secrets.
+    * It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
+4. **Manifest Update (`sed`)**:
+    * The pipeline modifies `k8s/deployment.yaml` directly, replacing the old image tag with the new one.
+5. **Git Commit & Push**:
+    * The updated manifest is committed back to the repository by the `github-actions[bot]`.
+    * The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
+6. **Argo CD Sync**:
+    * Because Argo CD is watching the `k8s/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
+    * Argo CD automatically pulls the new image into your Kubernetes cluster.
 
 ### 🛠️ Setup Requirements
 
 To use this workflow, you must configure the following:
 
 #### 1. GitHub Secrets
+
 Go to **Settings > Secrets and variables > Actions**. Ensure you are on the **Secrets** tab (this is for sensitive data) and click **New repository secret** to add:
-*   `DOCKERHUB_USERNAME`: Your Docker Hub username.
-*   `DOCKERHUB_TOKEN`: A Personal Access Token from Docker Hub.
+
+* `DOCKERHUB_USERNAME`: Your Docker Hub username.
+* `DOCKERHUB_TOKEN`: A Personal Access Token from Docker Hub.
 
 *Note: Do not add these to the "Variables" tab, as secrets are masked in logs and more secure.*
 
 #### 2. Workflow Permissions (Critical)
+
 The workflow uses the built-in `GITHUB_TOKEN` to commit manifest changes. By default, this token is often restricted to read-only. **You must enable write access:**
-1.  Navigate to your repository on GitHub.
-2.  Go to **Settings > Actions > General**.
-3.  Scroll down to the **Workflow permissions** section.
-4.  Select **Read and write permissions**.
-5.  Click **Save**.
+
+1. Navigate to your repository on GitHub.
+2. Go to **Settings > Actions > General**.
+3. Scroll down to the **Workflow permissions** section.
+4. Select **Read and write permissions**.
+5. Click **Save**.
 
 ***
 
