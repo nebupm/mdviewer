@@ -26,7 +26,13 @@ docker push deneasta/mdviewer:latest
 
 ### 2. Apply Manifests
 
-Deploy the application and service to your cluster:
+Before deploying, create the dedicated namespace (if not using ArgoCD):
+
+```bash
+kubectl create namespace mdviewer
+```
+
+Then, deploy the application and service to your cluster:
 
 ```bash
 kubectl apply -f k8s/deployment.yaml
@@ -45,6 +51,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mdviewer-svc
+  namespace: mdviewer
 spec:
   selector:
     app: mdviewer
@@ -144,6 +151,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mdviewer
+  namespace: mdviewer
   labels:
     app: mdviewer
 spec:
@@ -219,6 +227,64 @@ If you have ArgoCD installed and want to manage the app via GitOps:
 kubectl apply -f mdviewer-app.yaml
 ```
 
+#### Explanation of mdviewer-app.yaml
+
+An **Argo CD Application** is a Custom Resource Definition (CRD) that tells Argo CD how to manage a set of Kubernetes resources as a single unit. It bridges the gap between your Git repository (the source of truth) and your cluster.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mdviewer-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nebupm/mdviewer.git
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mdviewer
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+```
+
+***
+
+##### 🔍 Key Sections
+
+###### **1. `source` — Where the code lives**
+*   **`repoURL`**: The URL of the Git repository containing your manifests.
+*   **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s/` folder).
+*   **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
+
+###### **2. `destination` — Where the app goes**
+*   **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
+*   **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
+
+###### **3. `syncPolicy` — Automation & GitOps**
+*   **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
+    *   **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
+    *   **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
+*   **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
+
+***
+
+##### 🧠 Summary Table
+
+| Section | Purpose | Key Benefit |
+| :--- | :--- | :--- |
+| **Source** | Connects to Git | Single source of truth |
+| **Destination** | Targets the cluster | Deployment target management |
+| **Sync Policy** | Automates deployment | Eliminates manual intervention & prevents drift |
+
+***
+
 ## Verification Commands
 
 Use these commands to check if the application is installed and running correctly:
@@ -228,7 +294,7 @@ Use these commands to check if the application is installed and running correctl
 Verify that the pod is `Running`:
 
 ```bash
-kubectl get pods -l app=mdviewer
+kubectl get pods -n mdviewer -l app=mdviewer
 ```
 
 ### Check Service Status
@@ -236,7 +302,7 @@ kubectl get pods -l app=mdviewer
 Verify the service is created and check the NodePort:
 
 ```bash
-kubectl get service mdviewer-svc
+kubectl get service mdviewer-svc -n mdviewer
 ```
 
 ### Describe Deployment
@@ -244,7 +310,7 @@ kubectl get service mdviewer-svc
 Check for any errors in the deployment process:
 
 ```bash
-kubectl describe deployment mdviewer
+kubectl describe deployment mdviewer -n mdviewer
 ```
 
 ### View Logs
@@ -252,7 +318,7 @@ kubectl describe deployment mdviewer
 Check the application logs for any startup errors:
 
 ```bash
-kubectl logs -l app=mdviewer
+kubectl logs -l app=mdviewer -n mdviewer
 ```
 
 ### Access the Application
@@ -260,7 +326,7 @@ kubectl logs -l app=mdviewer
 Get the URL to access the app in your browser:
 
 ```bash
-minikube service mdviewer-svc --url
+minikube service mdviewer-svc -n mdviewer --url
 ```
 
 Alternatively, use the NodePort directly (defined as `30080`):
@@ -270,4 +336,3 @@ Alternatively, use the NodePort directly (defined as `30080`):
 minikube ip
 # Visit http://<minikube-ip>:30080
 ```
- 
