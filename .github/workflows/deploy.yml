@@ -8,6 +8,7 @@ on:
       - 'Dockerfile'
       - 'requirements.txt'
       - 'k8s/**'
+      - '.github/workflows/deploy.yml'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
