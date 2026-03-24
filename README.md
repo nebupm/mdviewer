@@ -79,9 +79,9 @@ spec:
 
 ###### **1. `port` — The Service Port**
 
-* This is the **port exposed by the Service inside the cluster**.
-* Other pods or cluster‑internal clients communicate with the service using this port.
-* In your YAML:
+- This is the **port exposed by the Service inside the cluster**.
+- Other pods or cluster‑internal clients communicate with the service using this port.
+- In your YAML:
 
 ```yaml
 port: 80
@@ -93,9 +93,9 @@ port: 80
 
 ###### **2. `targetPort` — The Pod Container Port**
 
-* This is the **port your application listens on inside the container**.
-* It maps the Service port → to the actual container port.
-* In your YAML:
+- This is the **port your application listens on inside the container**.
+- It maps the Service port → to the actual container port.
+- In your YAML:
 
 ```yaml
 targetPort: 8080
@@ -109,14 +109,14 @@ This allows your container to listen on any port, while the service presents a s
 
 ###### **3. `nodePort` — The External Port on the Node**
 
-* This is the port exposed **on every Kubernetes node**, enabling external access.
-* Only used because Service type is:
+- This is the port exposed **on every Kubernetes node**, enabling external access.
+- Only used because Service type is:
 
 ```yaml
 type: NodePort
 ```
 
-* In your YAML:
+- In your YAML:
 
 ```yaml
 nodePort: 30080
@@ -135,10 +135,10 @@ Example for Minikube: `http://$(minikube ip):30080`
 
 This three‑layer port mapping provides:
 
-* Port stability
-* Port translation
-* External access control
-* Flexible internal routing
+- Port stability
+- Port translation
+- External access control
+- Flexible internal routing
 
 ***
 
@@ -192,10 +192,10 @@ spec:
 
 ##### 🔍 Core Components
 
-* **`replicas: 1`**: Tells Kubernetes to ensure exactly one instance of your app is running at all times.
-* **`selector`**: Defines how the Deployment finds the Pods it manages. It looks for Pods with the label `app: mdviewer`.
-* **`template`**: This is the blueprint for the Pods. The `labels` here must match the `selector` above.
-* **`containerPort: 8080`**: Tells Kubernetes that the application inside the container is listening on port 8080.
+- **`replicas: 1`**: Tells Kubernetes to ensure exactly one instance of your app is running at all times.
+- **`selector`**: Defines how the Deployment finds the Pods it manages. It looks for Pods with the label `app: mdviewer`.
+- **`template`**: This is the blueprint for the Pods. The `labels` here must match the `selector` above.
+- **`containerPort: 8080`**: Tells Kubernetes that the application inside the container is listening on port 8080.
 
 ***
 
@@ -205,20 +205,20 @@ The `resources` section is critical for cluster stability and ensuring your app 
 
 ###### **1. `requests` — Guaranteed Resources**
 
-* This is the **minimum amount** of resources Kubernetes guarantees to the container.
-* The scheduler uses this value to decide which node to place the Pod on.
-* In your YAML:
-    * `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
-    * `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
+- This is the **minimum amount** of resources Kubernetes guarantees to the container.
+- The scheduler uses this value to decide which node to place the Pod on.
+- In your YAML:
+    - `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
+    - `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
 
 ###### **2. `limits` — Maximum Allowed Resources**
 
-* This is the **hard ceiling**. The container cannot consume more than this amount.
-* **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
-* **Memory Limit**: If reached, the container is **OOM Killed** (Out of Memory) and restarted by Kubernetes.
-* In your YAML:
-    * `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
-    * `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
+- This is the **hard ceiling**. The container cannot consume more than this amount.
+- **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
+- **Memory Limit**: If reached, the container is **OOM Killed** (Out of Memory) and restarted by Kubernetes.
+- In your YAML:
+    - `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
+    - `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
 
 ***
 
@@ -272,21 +272,21 @@ spec:
 
 ###### **1. `source` — Where the code lives**
 
-* **`repoURL`**: The URL of the Git repository containing your manifests.
-* **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s/` folder).
-* **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
+- **`repoURL`**: The URL of the Git repository containing your manifests.
+- **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s/` folder).
+- **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
 
 ###### **2. `destination` — Where the app goes**
 
-* **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
-* **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
+- **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
+- **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
 
 ###### **3. `syncPolicy` — Automation & GitOps**
 
-* **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
-    * **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
-    * **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
-* **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
+- **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
+    - **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
+    - **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
+- **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
 
 ***
 
@@ -367,16 +367,16 @@ The workflow implements a **GitOps** flow:
 1. **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s/`).
 2. **Checkout**: It pulls the latest code from the repository.
 3. **Docker Build & Push**:
-    * It logs into Docker Hub using secrets.
-    * It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
+    - It logs into Docker Hub using secrets.
+    - It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
 4. **Manifest Update (`sed`)**:
-    * The pipeline modifies `k8s/deployment.yaml` directly, replacing the old image tag with the new one.
+    - The pipeline modifies `k8s/deployment.yaml` directly, replacing the old image tag with the new one.
 5. **Git Commit & Push**:
-    * The updated manifest is committed back to the repository by the `github-actions[bot]`.
-    * The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
+    - The updated manifest is committed back to the repository by the `github-actions[bot]`.
+    - The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
 6. **Argo CD Sync**:
-    * Because Argo CD is watching the `k8s/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
-    * Argo CD automatically pulls the new image into your Kubernetes cluster.
+    - Because Argo CD is watching the `k8s/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
+    - Argo CD automatically pulls the new image into your Kubernetes cluster.
 
 ### 🛠️ Setup Requirements
 
@@ -386,8 +386,8 @@ To use this workflow, you must configure the following:
 
 Go to **Settings > Secrets and variables > Actions**. Ensure you are on the **Secrets** tab (this is for sensitive data) and click **New repository secret** to add:
 
-* `DOCKERHUB_USERNAME`: Your Docker Hub username.
-* `DOCKERHUB_TOKEN`: A Personal Access Token from Docker Hub.
+- `DOCKERHUB_USERNAME`: Your Docker Hub username.
+- `DOCKERHUB_TOKEN`: A Personal Access Token from Docker Hub.
 
 *Note: Do not add these to the "Variables" tab, as secrets are masked in logs and more secure.*
 
@@ -462,7 +462,7 @@ kubectl port-forward svc/mdviewer-svc -n mdviewer 8080:80
 
 Then visit: **<http://localhost:8080>** in your browser.
 
-### Method 3: Direct NodePort Access (macOS/Docker Limitations)
+### Method 3: Direct NodePort Access when using minikube due to Docker driver (macOS/Docker Limitations)
 
 On macOS/Windows using the `docker` driver, the NodePort is exposed on the Minikube node (container) but is **not directly routable** from your host machine.
 
@@ -474,6 +474,27 @@ minikube tunnel
 ```
 
 Once the tunnel is running, you can access the app at: **http://$(minikube ip):30080**
+
+### Method 4: Direct NodePort Access when using a general K8s cluster
+
+Since your mdviewer-svc is configured as a NodePort service on port 30080, it is automatically exposed on every node in your Multipass cluster.
+
+#### 🎯 Strategic Choice
+
+You can access the app from your Mac browser using the IP address of any of your 5 VMs.
+
+1. Pick any Node IP:
+   - k8s-m1: 192.168.2.30
+   - k8s-m2: 192.168.2.31
+   - k8s-m3: 192.168.2.32
+   - k8s-w1: 192.168.2.33
+   - k8s-w2: 192.168.2.34
+
+2. The Access URL:
+  Open your browser and go to:
+  👉 http://192.168.2.30:30080 (http://192.168.2.30:30080)
+
+  (Any of the worker or manager IPs will work with that port!)
 
 ## Troubleshooting
 
