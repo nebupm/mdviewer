@@ -208,8 +208,8 @@ The `resources` section is critical for cluster stability and ensuring your app 
 - This is the **minimum amount** of resources Kubernetes guarantees to the container.
 - The scheduler uses this value to decide which node to place the Pod on.
 - In your YAML:
-    - `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
-    - `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
+  - `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
+  - `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
 
 ###### **2. `limits` — Maximum Allowed Resources**
 
@@ -217,8 +217,8 @@ The `resources` section is critical for cluster stability and ensuring your app 
 - **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
 - **Memory Limit**: If reached, the container is **OOM Killed** (Out of Memory) and restarted by Kubernetes.
 - In your YAML:
-    - `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
-    - `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
+  - `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
+  - `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
 
 ***
 
@@ -284,8 +284,8 @@ spec:
 ###### **3. `syncPolicy` — Automation & GitOps**
 
 - **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
-    - **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
-    - **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
+  - **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
+  - **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
 - **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
 
 ***
@@ -495,6 +495,12 @@ You can access the app from your Mac browser using the IP address of any of your
   👉 http://192.168.2.30:30080 (http://192.168.2.30:30080)
 
   (Any of the worker or manager IPs will work with that port!)
+
+🕵️ Why This Works:
+
+- NodePort: Kubernetes maps a port (30000-32767) on all nodes to your service.
+- Routing: When you hit 192.168.2.30:30080, the kube-proxy on that node sees the traffic and routes it to the actual pod (even if the pod is running on a different node
+     like k8s-w2).
 
 ## Troubleshooting
 
