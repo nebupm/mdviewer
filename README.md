@@ -44,11 +44,11 @@ kubectl create namespace mdviewer
 Then, deploy the application and service to your cluster:
 
 ```bash
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s_config/deployment.yaml
+kubectl apply -f k8s_config/service.yaml
 ```
 
-#### Explanation of k8s/service.yaml
+#### Explanation of k8s_config/service.yaml
 
 ##### 🧩 Understanding the `ports` Section in a Kubernetes Service (NodePort)
 
@@ -87,7 +87,7 @@ spec:
 port: 80
 ```
 
-    → The Service is accessible internally at **mdviewer-svc:80**.
+  → The Service is accessible internally at **mdviewer-svc:80**.
 
 ***
 
@@ -101,7 +101,7 @@ port: 80
 targetPort: 8080
 ```
 
-    → Means incoming traffic on port 80 gets forwarded to **port 8080** in the Pod.
+  → Means incoming traffic on port 80 gets forwarded to **port 8080** in the Pod.
 
 This allows your container to listen on any port, while the service presents a stable API.
 
@@ -122,8 +122,7 @@ type: NodePort
 nodePort: 30080
 ```
 
-    → Users can access your app via:
-        http://<NodeIP>:30080
+  → Users can access your app via: `http://<NodeIP>:30080`
 
 Example for Minikube: `http://$(minikube ip):30080`
 
@@ -131,7 +130,7 @@ Example for Minikube: `http://$(minikube ip):30080`
 
 ###### 🔁 How Traffic Flows (End‑to‑End)
 
-    User → NodeIP:30080 (nodePort) → Service mdviewer-svc:80 (port) → Pod container:8080 (targetPort)
+  User → NodeIP:30080 (nodePort) → Service mdviewer-svc:80 (port) → Pod container:8080 (targetPort)
 
 This three‑layer port mapping provides:
 
@@ -152,7 +151,7 @@ This three‑layer port mapping provides:
 
 ***
 
-#### Explanation of k8s/deployment.yaml
+#### Explanation of k8s_config/deployment.yaml
 
 A **Deployment** is a Kubernetes resource that manages a set of identical Pods. It handles scaling, updates, and self-healing (restarting pods if they fail).
 
@@ -234,6 +233,8 @@ The `resources` section is critical for cluster stability and ensuring your app 
 ### 3. Deploy via ArgoCD (Optional)
 
 If you have ArgoCD installed and want to manage the app via GitOps:
+Argo CD is in multipass K8s cluster: User the file argocd_config/mdviewer-app-multipass.yaml
+Argo CD is in minikube K8s cluster: User the file argocd_config/mdviewer-app-minikube.yaml
 
 ```bash
 kubectl apply -f mdviewer-app.yaml
@@ -273,7 +274,7 @@ spec:
 ###### **1. `source` — Where the code lives**
 
 - **`repoURL`**: The URL of the Git repository containing your manifests.
-- **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s/` folder).
+- **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s_config/` folder).
 - **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
 
 ###### **2. `destination` — Where the app goes**
@@ -316,7 +317,7 @@ on:
       - 'app/**'
       - 'Dockerfile'
       - 'requirements.txt'
-      - 'k8s/**'
+      - 'k8s_config/**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -347,13 +348,13 @@ jobs:
 
       - name: Update Kubernetes Deployment
         run: |
-          sed -i 's|image: deneasta/mdviewer:.*|image: deneasta/mdviewer:${{ github.sha }}|' k8s/deployment.yaml
+          sed -i 's|image: deneasta/mdviewer:.*|image: deneasta/mdviewer:${{ github.sha }}|' k8s_config/deployment.yaml
           
       - name: Commit and Push manifest change
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add k8s/deployment.yaml
+          git add k8s_config/deployment.yaml
           git commit -m "chore: update image tag to ${{ github.sha }} [skip ci]"
           git push
 ```
@@ -364,18 +365,18 @@ jobs:
 
 The workflow implements a **GitOps** flow:
 
-1. **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s/`).
+1. **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s_config/`).
 2. **Checkout**: It pulls the latest code from the repository.
 3. **Docker Build & Push**:
     - It logs into Docker Hub using secrets.
     - It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
 4. **Manifest Update (`sed`)**:
-    - The pipeline modifies `k8s/deployment.yaml` directly, replacing the old image tag with the new one.
+    - The pipeline modifies `k8s_config/deployment.yaml` directly, replacing the old image tag with the new one.
 5. **Git Commit & Push**:
     - The updated manifest is committed back to the repository by the `github-actions[bot]`.
     - The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
 6. **Argo CD Sync**:
-    - Because Argo CD is watching the `k8s/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
+    - Because Argo CD is watching the `k8s_config/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
     - Argo CD automatically pulls the new image into your Kubernetes cluster.
 
 ### 🛠️ Setup Requirements
@@ -492,7 +493,7 @@ You can access the app from your Mac browser using the IP address of any of your
 
 2. The Access URL:
   Open your browser and go to:
-  👉 http://192.168.2.30:30080 (http://192.168.2.30:30080)
+  👉 <http://192.168.2.30:30080> (<http://192.168.2.30:30080>)
 
   (Any of the worker or manager IPs will work with that port!)
 
