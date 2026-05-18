@@ -48,9 +48,28 @@ kubectl apply -f k8s_config/deployment.yaml
 kubectl apply -f k8s_config/service.yaml
 ```
 
-#### Explanation of k8s_config/service.yaml
+## Kubernetes Deployment (Multipass)
 
-##### 🧩 Understanding the `ports` Section in a Kubernetes Service (NodePort)
+To deploy this application in an independent K8s cluster, follow these steps:
+
+### Apply Manifests
+
+Before deploying, create the dedicated namespace (if not using ArgoCD):
+
+```bash
+kubectl create namespace mdviewer
+```
+
+Then, deploy the application and service to your cluster:
+
+```bash
+kubectl apply -f k8s_config/deployment.yaml
+kubectl apply -f k8s_config/service.yaml
+```
+
+### Explanation of k8s_config/service.yaml
+
+#### 🧩 Understanding the `ports` Section in a Kubernetes Service (NodePort)
 
 When defining a **Service** in Kubernetes — especially of type `NodePort` — the `ports` section controls **how traffic flows** from outside the cluster to your application running inside a Pod.
 
@@ -75,9 +94,9 @@ spec:
 
 ***
 
-##### 🔍 What Each Port Field Means
+#### 🔍 What Each Port Field Means
 
-###### **1. `port` — The Service Port**
+##### **1. `port` — The Service Port**
 
 - This is the **port exposed by the Service inside the cluster**.
 - Other pods or cluster‑internal clients communicate with the service using this port.
@@ -91,7 +110,7 @@ port: 80
 
 ***
 
-###### **2. `targetPort` — The Pod Container Port**
+##### **2. `targetPort` — The Pod Container Port**
 
 - This is the **port your application listens on inside the container**.
 - It maps the Service port → to the actual container port.
@@ -107,7 +126,7 @@ This allows your container to listen on any port, while the service presents a s
 
 ***
 
-###### **3. `nodePort` — The External Port on the Node**
+##### **3. `nodePort` — The External Port on the Node**
 
 - This is the port exposed **on every Kubernetes node**, enabling external access.
 - Only used because Service type is:
@@ -128,7 +147,7 @@ Example for Minikube: `http://$(minikube ip):30080`
 
 ***
 
-###### 🔁 How Traffic Flows (End‑to‑End)
+##### 🔁 How Traffic Flows (End‑to‑End)
 
   User → NodeIP:30080 (nodePort) → Service mdviewer-svc:80 (port) → Pod container:8080 (targetPort)
 
@@ -141,7 +160,7 @@ This three‑layer port mapping provides:
 
 ***
 
-##### 🧠 Summary Table
+#### 🧠 Summary Table
 
 | Field          | Description                                               | Your Value |
 | -------------- | --------------------------------------------------------- | ---------- |
@@ -151,7 +170,7 @@ This three‑layer port mapping provides:
 
 ***
 
-#### Explanation of k8s_config/deployment.yaml
+### Explanation of k8s_config/deployment.yaml
 
 A **Deployment** is a Kubernetes resource that manages a set of identical Pods. It handles scaling, updates, and self-healing (restarting pods if they fail).
 
@@ -189,7 +208,7 @@ spec:
 
 ***
 
-##### 🔍 Core Components
+#### 🔍 Core Components
 
 - **`replicas: 1`**: Tells Kubernetes to ensure exactly one instance of your app is running at all times.
 - **`selector`**: Defines how the Deployment finds the Pods it manages. It looks for Pods with the label `app: mdviewer`.
@@ -198,11 +217,11 @@ spec:
 
 ***
 
-##### ⚡ Resource Management: Requests vs. Limits
+#### ⚡ Resource Management: Requests vs. Limits
 
 The `resources` section is critical for cluster stability and ensuring your app has what it needs to perform.
 
-###### **1. `requests` — Guaranteed Resources**
+##### **1. `requests` — Guaranteed Resources**
 
 - This is the **minimum amount** of resources Kubernetes guarantees to the container.
 - The scheduler uses this value to decide which node to place the Pod on.
@@ -210,7 +229,7 @@ The `resources` section is critical for cluster stability and ensuring your app 
   - `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
   - `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
 
-###### **2. `limits` — Maximum Allowed Resources**
+##### **2. `limits` — Maximum Allowed Resources**
 
 - This is the **hard ceiling**. The container cannot consume more than this amount.
 - **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
@@ -221,7 +240,7 @@ The `resources` section is critical for cluster stability and ensuring your app 
 
 ***
 
-##### 🧠 Summary Table
+#### 🧠 Resource management Summary Table
 
 | Field | Purpose | Units |
 | :--- | :--- | :--- |
@@ -230,17 +249,17 @@ The `resources` section is critical for cluster stability and ensuring your app 
 
 ***
 
-### 3. Deploy via ArgoCD (Optional)
+## 3. Deploy via ArgoCD (Optional)
 
 If you have ArgoCD installed and want to manage the app via GitOps:
-Argo CD is in multipass K8s cluster: User the file argocd_config/mdviewer-app-multipass.yaml
-Argo CD is in minikube K8s cluster: User the file argocd_config/mdviewer-app-minikube.yaml
+Argo CD is in multipass K8s cluster: Uses the file argocd_config/mdviewer-app-multipass.yaml
+Argo CD is in minikube K8s cluster: Uses the file argocd_config/mdviewer-app-minikube.yaml
 
 ```bash
 kubectl apply -f mdviewer-app.yaml
 ```
 
-#### Explanation of mdviewer-app.yaml
+### Explanation of mdviewer-app.yaml
 
 An **Argo CD Application** is a Custom Resource Definition (CRD) that tells Argo CD how to manage a set of Kubernetes resources as a single unit. It bridges the gap between your Git repository (the source of truth) and your cluster.
 
@@ -255,7 +274,7 @@ spec:
   source:
     repoURL: https://github.com/nebupm/mdviewer.git
     targetRevision: HEAD
-    path: k8s
+    path: k8s_config
   destination:
     server: https://kubernetes.default.svc
     namespace: mdviewer
@@ -269,20 +288,20 @@ spec:
 
 ***
 
-##### 🔍 Key Sections
+#### 🔍 Key Sections
 
-###### **1. `source` — Where the code lives**
+##### **1. `source` — Where the code lives**
 
 - **`repoURL`**: The URL of the Git repository containing your manifests.
 - **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s_config/` folder).
 - **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
 
-###### **2. `destination` — Where the app goes**
+##### **2. `destination` — Where the app goes**
 
 - **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
 - **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
 
-###### **3. `syncPolicy` — Automation & GitOps**
+##### **3. `syncPolicy` — Automation & GitOps**
 
 - **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
   - **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
@@ -291,7 +310,7 @@ spec:
 
 ***
 
-##### 🧠 Summary Table
+#### 🧠 ArgoCD Deployment summary Table
 
 | Section | Purpose | Key Benefit |
 | :--- | :--- | :--- |
@@ -404,40 +423,55 @@ The workflow uses the built-in `GITHUB_TOKEN` to commit manifest changes. By def
 
 ***
 
-## Verification Commands
+## 🔄 Updating & Managing the Application
 
-Use these commands to check if the application is installed and running correctly:
+### Handling Newer Container Versions
+If a newer version of the container is available, you can update the deployment using these methods:
 
-### Check Pod Status
+- **GitOps (Automated):** Simply push your code to the `main` branch. The GitHub Action will build the image, update the tag in `k8s_config/deployment.yaml`, and Argo CD will sync the new version automatically.
+- **Manual Image Update:** To manually switch to a specific tag:
+  ```bash
+  kubectl set image deployment/mdviewer mdviewer=deneasta/mdviewer:<tag-name> -n mdviewer
+  ```
+- **Rolling Restart:** If you've updated the `latest` tag and need to force Kubernetes to pull the new image:
+  ```bash
+  kubectl rollout restart deployment/mdviewer -n mdviewer
+  ```
 
-Verify that the pod is `Running`:
+---
 
+## 🔍 Verification & Health Checks
+
+Follow these steps to ensure the deployment and service are installed correctly:
+
+### 1. Check Deployment & Pod Status
+Verify that the Deployment is scaled correctly and Pods are `Running` and `1/1 Ready`.
 ```bash
-kubectl get pods -n mdviewer -l app=mdviewer
+kubectl get deployment,pods -n mdviewer
 ```
 
-### Check Service Status
-
-Verify the service is created and check the NodePort:
-
+### 2. Verify Service & Endpoints
+The Service must exist and have active Endpoints (the internal IPs of your Pods). If Endpoints is `<none>`, the service selector doesn't match your pod labels.
 ```bash
-kubectl get service mdviewer-svc -n mdviewer
+kubectl get service,endpoints -n mdviewer
 ```
 
-### Describe Deployment
-
-Check for any errors in the deployment process:
-
+### 3. Check for Errors (Describe)
+If pods are failing, check the Events at the bottom of the describe output:
 ```bash
-kubectl describe deployment mdviewer -n mdviewer
+kubectl describe pod -l app=mdviewer -n mdviewer
 ```
 
-### View Logs
-
-Check the application logs for any startup errors:
-
+### 4. Application Health Check
+Verify the service is responding correctly over the network:
 ```bash
-kubectl logs -l app=mdviewer -n mdviewer
+# Check HTTP headers to see if the server returns 200 OK
+curl -I http://<Node-IP>:30080
+```
+
+### 5. View Live Logs
+```bash
+kubectl logs -l app=mdviewer -n mdviewer --tail 20
 ```
 
 ## Accessing the Application
@@ -561,3 +595,29 @@ To allow Argo CD to manage all namespaces on the cluster (including `mdviewer`),
     ```bash
     kubectl patch application mdviewer-app -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
     ```
+
+## GitOps & Application Deployment (ArgoCD)
+
+Managed via an ArgoCD instance running on **Minikube**.
+
+### Deployment Manifests
+
+- **`k8s_app/mdviewer/argocd_config/mdviewer-app-minikube.yaml`**: Targets local Minikube.
+- **`k8s_app/mdviewer/argocd_config/mdviewer-app-multipass.yaml`**: Targets the Multipass cluster.
+
+### 4. Accessing Applications
+
+Applications deployed to the Multipass cluster are exposed via **NodePort**.
+
+- **mdviewer**: Accessible at `http://<Any-Node-IP>:30080`
+
+## Verification
+
+To verify the Multipass cluster status:
+
+```bash
+# Switch to Multipass context
+kubectl config use-context kubernetes-admin@kubernetes
+kubectl get nodes
+kubectl get pods -A
+```

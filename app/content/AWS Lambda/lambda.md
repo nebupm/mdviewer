@@ -7,13 +7,13 @@ A uses dont need to worry about the EC2 instances. They just need to worry about
 
 This is a compute settice that we can use ti build apps without provisioning or managing servers.\
 
-![Lambda](image.png)
+![Lambda](images/image.png)
 
 Lambda is Event Driven.
 A deployed lambda functiuon sis triggerred by an event
 What tume of actions can we perform with a lambda function.
 
-![Lambda function](image-1.png)
+![Lambda function](images/image-1.png)
 
 We can
 
@@ -68,10 +68,10 @@ we have a photo sharing app. Lambda can be used to resize the image.
 We can use Lambda to automate backups. We can trigger a lambda function to backup our data every day at 1 am. 
 We can also use it to operate serverless websites. We can use Lambda to serve our website content without having to manage any servers.
 
-![serverless websites](image-2.png)
+![serverless websites](images/image-2.png)
 
 We can also use it for data analytics. We can use Lambda to process and analyze large amounts of data in real-time.
-![Processing data Streams](image-3.png)
+![Processing data Streams](images/image-3.png)
 
 ## LAmbda function Architecture
 
@@ -100,7 +100,7 @@ Extensibility
 
 
 Event Producers --> Event Router --> Event Consumer
-![Flow of messages](image-4.png)
+![Flow of messages](images/image-4.png)
 
 ### Inside LAmbda
 
@@ -108,20 +108,20 @@ AWS Lambda Service is same as Event Router.
 Event Producers can be S3, API Gateway, DynamoDB, etc.
 Event Consumers can be Lambda functions, Step Functions, etc.
 
-![Inside Lambda](image-5.png)
+![Inside Lambda](images/image-5.png)
 
 Examples:
 
-![Invoking a Lambda Function](image-6.png)
+![Invoking a Lambda Function](images/image-6.png)
 
 ### Design patterns
 
 We have have following design patterns.
 
-![Lambda design patterns](image-7.png)
+![Lambda design patterns](images/image-7.png)
 
 #### lambda Function design standards
 
-![An Ideal Scenarions for a Lambda function](image-8.png)
+![An Ideal Scenarions for a Lambda function](images/image-8.png)
 
 
