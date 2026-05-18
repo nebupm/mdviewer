@@ -1,6 +1,6 @@
 # Why Lambda?
 
-## Introduction to Lambda
+## Introduction to Lambda
 
 What is AWS Lambda.
 A uses dont need to worry about the EC2 instances. They just need to worry about lambda service,
