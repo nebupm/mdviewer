@@ -425,15 +425,30 @@ The workflow uses the built-in `GITHUB_TOKEN` to commit manifest changes. By def
 
 ## 🔄 Updating & Managing the Application
 
-### Handling Newer Container Versions
-If a newer version of the container is available, you can update the deployment using these methods:
+### Method 1: GitOps (Automated with Argo CD)
+Simply push your code to the `main` branch. The GitHub Action will build the image, update the tag in `k8s_config/deployment.yaml`, and Argo CD will sync the new version automatically.
 
-- **GitOps (Automated):** Simply push your code to the `main` branch. The GitHub Action will build the image, update the tag in `k8s_config/deployment.yaml`, and Argo CD will sync the new version automatically.
-- **Manual Image Update:** To manually switch to a specific tag:
-  ```bash
-  kubectl set image deployment/mdviewer mdviewer=deneasta/mdviewer:<tag-name> -n mdviewer
-  ```
-- **Rolling Restart:** If you've updated the `latest` tag and need to force Kubernetes to pull the new image:
+### Method 2: Manual Update (No GitOps/Argo CD)
+If you are managing the cluster manually, use one of these two approaches:
+
+#### A. The Declarative Way (Recommended)
+This keeps your local manifests (the "source of truth") in sync with the cluster.
+1. Update the `image:` tag in `k8s_config/deployment.yaml`.
+2. Apply the change:
+   ```bash
+   kubectl apply -f k8s_config/deployment.yaml -n mdviewer
+   ```
+
+#### B. The Imperative Way (Fastest)
+Use this for quick updates without editing files. Note that this creates "drift" between your YAML and the cluster.
+```bash
+kubectl set image deployment/mdviewer mdviewer=deneasta/mdviewer:<new-id> -n mdviewer
+```
+
+---
+
+### Other Management Commands
+- **Rolling Restart:** If you need to force a redeploy of the *same* tag (e.g., to pick up changes in Secrets or ConfigMaps without changing the image):
   ```bash
   kubectl rollout restart deployment/mdviewer -n mdviewer
   ```

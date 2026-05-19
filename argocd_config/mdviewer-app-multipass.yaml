@@ -10,7 +10,7 @@ spec:
     targetRevision: HEAD
     path: k8s_config
   destination:
-    name: multipass-k8s
+    name: k8slab
     namespace: mdviewer
   syncPolicy:
     automated:
