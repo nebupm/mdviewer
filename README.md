@@ -611,6 +611,42 @@ To allow Argo CD to manage all namespaces on the cluster (including `mdviewer`),
     kubectl patch application mdviewer-app -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
     ```
 
+### Issue: Application is not syncing or not reflecting recent changes
+
+If you have pushed changes to GitHub but they are not appearing in your cluster, follow these steps:
+
+#### 1. Check for Sync Errors
+The most common cause is a manifest error (like a YAML typo) that prevents Argo CD from applying the changes.
+```bash
+argocd app get mdviewer-app-multipass
+```
+*   **Look for:** `Sync Status`. If it says `OutOfSync`, look at the `Condition` or `Message` field at the bottom.
+*   **Look for:** `Health Status`. If it's `Degraded` or `Missing`, it means the resources couldn't be created.
+
+#### 2. Verify the Commit Hash
+Compare the commit Argo CD *thinks* is the latest with what is actually on GitHub:
+```bash
+# Get the hash Argo CD is looking at
+argocd app get mdviewer-app-multipass | grep "Sync Status"
+
+# Get the latest hash from GitHub
+git ls-remote https://github.com/nebupm/mdviewer.git HEAD
+```
+*   **If the hashes match:** Argo CD has seen your change. If the app hasn't updated, the problem is likely in your manifest (e.g., the image tag wasn't updated in `k8s_config/deployment.yaml`).
+*   **If the hashes differ:** Argo CD hasn't pulled your latest commit yet (it polls every 3 minutes by default).
+
+#### 3. Force a Refresh
+To force Argo CD to check GitHub immediately:
+```bash
+argocd app get mdviewer-app-multipass --refresh
+```
+
+#### 4. Check Diff (The "Why")
+If the app is `OutOfSync`, you can see exactly what Argo CD wants to change:
+```bash
+argocd app diff mdviewer-app-multipass
+```
+
 ## GitOps & Application Deployment (ArgoCD)
 
 Managed via an ArgoCD instance running on **Minikube**.
