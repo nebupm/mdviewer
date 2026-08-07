@@ -34,18 +34,34 @@
 
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item {% if not active_folder and not search_results %}active{% endif %}">
+                    <li class="nav-item {% if not top_level_folder and not search_results %}active{% endif %}">
                         <a href="{{ url_for('index') }}">
                             <span class="icon">🏠</span>
                             <span class="label">Home</span>
                         </a>
                     </li>
                     {% for folder in folders %}
-                    <li class="nav-item {% if folder == active_folder %}active{% endif %}">
+                    <li class="nav-item {% if folder == top_level_folder %}active{% endif %}">
                         <a href="{{ url_for('index', foldername=folder) }}">
                             <span class="icon">📁</span>
                             <span class="label">{{ folder }}</span>
                         </a>
+                        {% if folder == top_level_folder and active_nav_items %}
+                        <ul class="subnav-list">
+                            {% for item in active_nav_items %}
+                            <li class="subnav-item {% if item.is_active %}active{% endif %}">
+                                {% if item.is_dir %}
+                                <a href="{{ url_for('index', foldername=item.path) }}">
+                                {% else %}
+                                <a href="#{{ item.anchor }}">
+                                {% endif %}
+                                    <span class="icon">{% if item.is_dir %}📁{% else %}📄{% endif %}</span>
+                                    <span class="label">{{ item.label }}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
                     </li>
                     {% endfor %}
                 </ul>
@@ -70,7 +86,7 @@
                         <ul class="results-list">
                             {% for result in search_results %}
                             <li class="result-item">
-                                <a href="{{ url_for('index', foldername=result.folder, from_search=1) }}#{{ result.file_id }}" class="result-link">
+                                <a href="{{ url_for('index', foldername=result.subfolder_path, from_search=1) }}#{{ result.file_id }}" class="result-link">
                                     <span class="result-folder">{{ result.folder }}</span> / <span class="result-file">{{ result.file }}</span>
                                 </a>
                                 <p class="result-snippet">{{ result.snippet|safe }}</p>
@@ -80,6 +96,22 @@
                     {% else %}
                         <p class="no-results">No matches found.</p>
                     {% endif %}
+                </div>
+            {% elif is_toc %}
+                <div class="toc-container">
+                    <h1 class="toc-title">📁 {{ folder_title }}</h1>
+                    <p class="toc-subtitle">Select a topic below to view its content:</p>
+                    <div class="toc-grid">
+                        {% for item in toc_items %}
+                        <a href="{{ url_for('index', foldername=item.path) }}" class="toc-card">
+                            <div class="toc-card-icon">📁</div>
+                            <div class="toc-card-content">
+                                <h3 class="toc-card-title">{{ item.label }}</h3>
+                                <span class="toc-card-action">View Topic &rarr;</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
                 </div>
             {% elif content %}
                 <article class="markdown-body">

@@ -1,3 +1,7 @@
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --primary-color: #2563eb;
   --secondary-color: #f8fafc;
@@ -358,3 +362,130 @@ body {
     color: #1e293b;
     border-color: #cbd5e1;
 }
+
+/* Subdirectory Group Header styling */
+.markdown-body h2.subdir-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 3.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Sidebar sub-navigation */
+.subnav-list {
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+    background-color: #0f172a; /* darker accent background for nested nav */
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.subnav-item a {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1.5rem 0.5rem 2.5rem; /* Indented for nested structure */
+    text-decoration: none;
+    color: #94a3b8 !important;
+    font-size: 0.875rem;
+    font-weight: 400;
+    transition: all 0.2s;
+    gap: 0.5rem;
+}
+
+.subnav-item a:hover {
+    color: #ffffff !important;
+    background-color: #1e293b;
+}
+
+/* Active sub-navigation item styling */
+.subnav-item.active a {
+    color: var(--primary-color) !important;
+    background-color: #1e293b;
+    font-weight: 600;
+}
+
+/* Table of Contents Grid & Card Styling */
+.toc-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.toc-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #0f172a;
+}
+
+.toc-subtitle {
+    font-size: 1.125rem;
+    color: #64748b;
+    margin-bottom: 2.5rem;
+}
+
+.toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.toc-card {
+    display: flex;
+    align-items: flex-start;
+    padding: 1.5rem;
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    gap: 1rem;
+}
+
+.toc-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -8px rgba(37, 99, 235, 0.15);
+    border-color: var(--primary-color);
+}
+
+.toc-card-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.toc-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toc-card-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.4;
+    transition: color 0.2s;
+}
+
+.toc-card:hover .toc-card-title {
+    color: var(--primary-color);
+}
+
+.toc-card-action {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+}
+
+

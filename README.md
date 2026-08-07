@@ -11,6 +11,50 @@ This is a simple app to view markdown files.
 - **Return to Search:** A smart navigation bar appears when viewing content from a search result, allowing you to return to your exact search position with one click.
 - **GitOps Ready:** Fully integrated with GitHub Actions and Argo CD for automated builds and deployments.
 
+## Local Development & Testing
+
+You can run and test the application locally in one of two ways:
+
+### Option 1: Using a Python Virtual Environment (Recommended for development)
+
+1. **Create and activate a virtual environment:**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. **Install the required dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the Flask application:**
+
+   ```bash
+   python app/app.py
+   ```
+
+   The application will start and be available at: http://localhost:8080
+
+### Option 2: Using Docker Compose
+
+1. **Build and start the application container:**
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+2. **Access the application:**
+   The application will be accessible externally at: http://localhost:5001
+
+3. **Stop the container:**
+
+   ```bash
+   docker compose down
+   ```
+
 ## Kubernetes Deployment (Minikube)
 
 To deploy this application in a Minikube cluster, follow these steps:
@@ -66,6 +110,38 @@ Then, deploy the application and service to your cluster:
 kubectl apply -f k8s_config/deployment.yaml
 kubectl apply -f k8s_config/service.yaml
 ```
+
+## Kubernetes Deployment (Helm Chart)
+
+You can also deploy the application using the Helm chart located in the `helm/mdviewer` directory.
+
+### 1. Install or Upgrade the Release
+
+To install the Helm chart with the default values under the `mdviewer` namespace:
+
+```bash
+helm upgrade --install mdviewer helm/mdviewer --namespace mdviewer --create-namespace
+```
+
+### 2. Configure Values
+
+You can customize the deployment by passing custom values (e.g., replica count or image parameters) using `--set` or by overriding `values.yaml` properties:
+
+```bash
+# Example: Deploying with 3 replicas and a custom nodePort
+helm upgrade --install mdviewer helm/mdviewer \
+  --namespace mdviewer \
+  --create-namespace \
+  --set replicaCount=3 \
+  --set service.nodePort=30090
+```
+
+To dry-run and inspect the rendered Kubernetes manifests:
+
+```bash
+helm template mdviewer helm/mdviewer
+```
+
 
 ### Explanation of k8s_config/service.yaml
 
@@ -435,12 +511,14 @@ If you are managing the cluster manually, use one of these two approaches:
 This keeps your local manifests (the "source of truth") in sync with the cluster.
 1. Update the `image:` tag in `k8s_config/deployment.yaml`.
 2. Apply the change:
+
    ```bash
    kubectl apply -f k8s_config/deployment.yaml -n mdviewer
    ```
 
 #### B. The Imperative Way (Fastest)
 Use this for quick updates without editing files. Note that this creates "drift" between your YAML and the cluster.
+
 ```bash
 kubectl set image deployment/mdviewer mdviewer=deneasta/mdviewer:<new-id> -n mdviewer
 ```
@@ -449,6 +527,7 @@ kubectl set image deployment/mdviewer mdviewer=deneasta/mdviewer:<new-id> -n mdv
 
 ### Other Management Commands
 - **Rolling Restart:** If you need to force a redeploy of the *same* tag (e.g., to pick up changes in Secrets or ConfigMaps without changing the image):
+
   ```bash
   kubectl rollout restart deployment/mdviewer -n mdviewer
   ```
@@ -461,30 +540,35 @@ Follow these steps to ensure the deployment and service are installed correctly:
 
 ### 1. Check Deployment & Pod Status
 Verify that the Deployment is scaled correctly and Pods are `Running` and `1/1 Ready`.
+
 ```bash
 kubectl get deployment,pods -n mdviewer
 ```
 
 ### 2. Verify Service & Endpoints
 The Service must exist and have active Endpoints (the internal IPs of your Pods). If Endpoints is `<none>`, the service selector doesn't match your pod labels.
+
 ```bash
 kubectl get service,endpoints -n mdviewer
 ```
 
 ### 3. Check for Errors (Describe)
 If pods are failing, check the Events at the bottom of the describe output:
+
 ```bash
 kubectl describe pod -l app=mdviewer -n mdviewer
 ```
 
 ### 4. Application Health Check
 Verify the service is responding correctly over the network:
+
 ```bash
 # Check HTTP headers to see if the server returns 200 OK
 curl -I http://<Node-IP>:30080
 ```
 
 ### 5. View Live Logs
+
 ```bash
 kubectl logs -l app=mdviewer -n mdviewer --tail 20
 ```
@@ -617,14 +701,17 @@ If you have pushed changes to GitHub but they are not appearing in your cluster,
 
 #### 1. Check for Sync Errors
 The most common cause is a manifest error (like a YAML typo) that prevents Argo CD from applying the changes.
+
 ```bash
 argocd app get mdviewer-app-multipass
 ```
+
 *   **Look for:** `Sync Status`. If it says `OutOfSync`, look at the `Condition` or `Message` field at the bottom.
 *   **Look for:** `Health Status`. If it's `Degraded` or `Missing`, it means the resources couldn't be created.
 
 #### 2. Verify the Commit Hash
 Compare the commit Argo CD *thinks* is the latest with what is actually on GitHub:
+
 ```bash
 # Get the hash Argo CD is looking at
 argocd app get mdviewer-app-multipass | grep "Sync Status"
@@ -632,17 +719,20 @@ argocd app get mdviewer-app-multipass | grep "Sync Status"
 # Get the latest hash from GitHub
 git ls-remote https://github.com/nebupm/mdviewer.git HEAD
 ```
+
 *   **If the hashes match:** Argo CD has seen your change. If the app hasn't updated, the problem is likely in your manifest (e.g., the image tag wasn't updated in `k8s_config/deployment.yaml`).
 *   **If the hashes differ:** Argo CD hasn't pulled your latest commit yet (it polls every 3 minutes by default).
 
 #### 3. Force a Refresh
 To force Argo CD to check GitHub immediately:
+
 ```bash
 argocd app get mdviewer-app-multipass --refresh
 ```
 
 #### 4. Check Diff (The "Why")
 If the app is `OutOfSync`, you can see exactly what Argo CD wants to change:
+
 ```bash
 argocd app diff mdviewer-app-multipass
 ```
