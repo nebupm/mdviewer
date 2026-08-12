@@ -1,0 +1,25 @@
+# Version control
+.git
+.gitignore
+
+# CI/CD
+.github
+
+# Local dev
+venv/
+compose.yaml
+agy-res
+
+# Deployment configs — not needed at runtime
+deploy/
+
+# Docs and metadata
+README.md
+*.md
+.DS_Store
+
+# Python artefacts
+**/__pycache__/
+*.pyc
+*.pyo
+*.log

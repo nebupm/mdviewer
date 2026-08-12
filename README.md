@@ -11,399 +11,230 @@ This is a simple app to view markdown files.
 - **Return to Search:** A smart navigation bar appears when viewing content from a search result, allowing you to return to your exact search position with one click.
 - **GitOps Ready:** Fully integrated with GitHub Actions and Argo CD for automated builds and deployments.
 
+## Project Structure
+
+```
+mdviewer/
+├── app/                        # Application source code
+│   ├── app.py
+│   ├── content/                # Markdown content files
+│   ├── static/                 # CSS and images
+│   └── templates/              # HTML templates
+├── deploy/                     # All deployment artifacts
+│   ├── argocd/
+│   │   └── application.yaml    # ArgoCD Application definition
+│   ├── helm/
+│   │   └── mdviewer/           # Helm chart (primary K8s deployment method)
+│   │       ├── Chart.yaml
+│   │       ├── values.yaml         # Base defaults
+│   │       ├── values-dev.yaml     # Dev environment overrides
+│   │       ├── values-prod.yaml    # Prod environment overrides
+│   │       └── templates/
+│   └── k8s/
+│       ├── base/               # Raw manifests (Kustomize base)
+│       └── overlays/           # Environment-specific overlays
+│           ├── dev/
+│           └── prod/
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # CI — build image, push to Docker Hub, update Helm values
+├── Dockerfile
+├── compose.yaml
+└── requirements.txt
+```
+
+---
+
 ## Local Development & Testing
 
-You can run and test the application locally in one of two ways:
+### Option 1: Python Virtual Environment (Recommended for development)
 
-### Option 1: Using a Python Virtual Environment (Recommended for development)
-
-1. **Create and activate a virtual environment:**
+1. Create and activate a virtual environment:
 
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    ```
 
-2. **Install the required dependencies:**
+2. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the Flask application:**
+3. Run the Flask application:
 
    ```bash
    python app/app.py
    ```
 
-   The application will start and be available at: http://localhost:8080
+   The application will be available at: http://localhost:8080
 
-### Option 2: Using Docker Compose
+### Option 2: Docker Compose
 
-1. **Build and start the application container:**
+1. Build and start the container:
 
    ```bash
    docker compose up --build -d
    ```
 
-2. **Access the application:**
-   The application will be accessible externally at: http://localhost:5001
+2. Access the application at: http://localhost:5001
 
-3. **Stop the container:**
+3. Stop the container:
 
    ```bash
    docker compose down
    ```
 
-## Kubernetes Deployment (Minikube)
+---
 
-To deploy this application in a Minikube cluster, follow these steps:
+## Deploying to Kubernetes
 
-### 1. Build and Push the Image
+There are two ways to deploy the application to a cluster. ArgoCD is the recommended approach for any persistent environment; the manual method is for cases where ArgoCD is not available.
 
-Since Minikube needs access to the container image, build it and push it to your registry:
+---
 
-You can either build it from local or build from github repo.
+### Option 1: GitOps with ArgoCD (Recommended)
 
-```bash
-docker build -t deneasta/mdviewer:latest .
-or 
-docker build -t deneasta/mdviewer:latest https://github.com/nebupm/mdviewer.git
-```
+ArgoCD watches the Helm chart in this repository and automatically applies changes to the cluster whenever `deploy/helm/mdviewer/values.yaml` is updated — which the CI pipeline does on every successful build. No manual intervention is required once ArgoCD is set up.
 
-Once its successfully build on your local setup, push this to the docker hub.
+The ArgoCD Application manifest lives at `deploy/argocd/application.yaml`. Apply it once to the cluster where ArgoCD is running:
 
 ```bash
-docker push deneasta/mdviewer:latest
+kubectl apply -f deploy/argocd/application.yaml
 ```
 
-### 2. Apply Manifests
-
-Before deploying, create the dedicated namespace (if not using ArgoCD):
-
-```bash
-kubectl create namespace mdviewer
-```
-
-Then, deploy the application and service to your cluster:
-
-```bash
-kubectl apply -f k8s_config/deployment.yaml
-kubectl apply -f k8s_config/service.yaml
-```
-
-## Kubernetes Deployment (Multipass)
-
-To deploy this application in an independent K8s cluster, follow these steps:
-
-### Apply Manifests
-
-Before deploying, create the dedicated namespace (if not using ArgoCD):
-
-```bash
-kubectl create namespace mdviewer
-```
-
-Then, deploy the application and service to your cluster:
-
-```bash
-kubectl apply -f k8s_config/deployment.yaml
-kubectl apply -f k8s_config/service.yaml
-```
-
-## Kubernetes Deployment (Helm Chart)
-
-You can also deploy the application using the Helm chart located in the `helm/mdviewer` directory.
-
-### 1. Install or Upgrade the Release
-
-To install the Helm chart with the default values under the `mdviewer` namespace:
-
-```bash
-helm upgrade --install mdviewer helm/mdviewer --namespace mdviewer --create-namespace
-```
-
-### 2. Configure Values
-
-You can customize the deployment by passing custom values (e.g., replica count or image parameters) using `--set` or by overriding `values.yaml` properties:
-
-```bash
-# Example: Deploying with 3 replicas and a custom nodePort
-helm upgrade --install mdviewer helm/mdviewer \
-  --namespace mdviewer \
-  --create-namespace \
-  --set replicaCount=3 \
-  --set service.nodePort=30090
-```
-
-To dry-run and inspect the rendered Kubernetes manifests:
-
-```bash
-helm template mdviewer helm/mdviewer
-```
-
-
-### Explanation of k8s_config/service.yaml
-
-#### 🧩 Understanding the `ports` Section in a Kubernetes Service (NodePort)
-
-When defining a **Service** in Kubernetes — especially of type `NodePort` — the `ports` section controls **how traffic flows** from outside the cluster to your application running inside a Pod.
-
-Here is the Service YAML for reference:
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: mdviewer-svc
-  namespace: mdviewer
-spec:
-  selector:
-    app: mdviewer
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8080
-      nodePort: 30080
-  type: NodePort
-```
-
-***
-
-#### 🔍 What Each Port Field Means
-
-##### **1. `port` — The Service Port**
-
-- This is the **port exposed by the Service inside the cluster**.
-- Other pods or cluster‑internal clients communicate with the service using this port.
-- In your YAML:
-
-```yaml
-port: 80
-```
-
-  → The Service is accessible internally at **mdviewer-svc:80**.
-
-***
-
-##### **2. `targetPort` — The Pod Container Port**
-
-- This is the **port your application listens on inside the container**.
-- It maps the Service port → to the actual container port.
-- In your YAML:
-
-```yaml
-targetPort: 8080
-```
-
-  → Means incoming traffic on port 80 gets forwarded to **port 8080** in the Pod.
-
-This allows your container to listen on any port, while the service presents a stable API.
-
-***
-
-##### **3. `nodePort` — The External Port on the Node**
-
-- This is the port exposed **on every Kubernetes node**, enabling external access.
-- Only used because Service type is:
-
-```yaml
-type: NodePort
-```
-
-- In your YAML:
-
-```yaml
-nodePort: 30080
-```
-
-  → Users can access your app via: `http://<NodeIP>:30080`
-
-Example for Minikube: `http://$(minikube ip):30080`
-
-***
-
-##### 🔁 How Traffic Flows (End‑to‑End)
-
-  User → NodeIP:30080 (nodePort) → Service mdviewer-svc:80 (port) → Pod container:8080 (targetPort)
-
-This three‑layer port mapping provides:
-
-- Port stability
-- Port translation
-- External access control
-- Flexible internal routing
-
-***
-
-#### 🧠 Summary Table
-
-| Field          | Description                                               | Your Value |
-| -------------- | --------------------------------------------------------- | ---------- |
-| **nodePort**   | Port exposed on each Kubernetes node for external traffic | `30080`    |
-| **port**       | Cluster‑internal Service port                             | `80`       |
-| **targetPort** | Pod container application port                            | `8080`     |
-
-***
-
-### Explanation of k8s_config/deployment.yaml
-
-A **Deployment** is a Kubernetes resource that manages a set of identical Pods. It handles scaling, updates, and self-healing (restarting pods if they fail).
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mdviewer
-  namespace: mdviewer
-  labels:
-    app: mdviewer
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mdviewer
-  template:
-    metadata:
-      labels:
-        app: mdviewer
-    spec:
-      containers:
-      - name: mdviewer
-        image: deneasta/mdviewer:latest
-        ports:
-        - containerPort: 8080
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-```
-
-***
-
-#### 🔍 Core Components
-
-- **`replicas: 1`**: Tells Kubernetes to ensure exactly one instance of your app is running at all times.
-- **`selector`**: Defines how the Deployment finds the Pods it manages. It looks for Pods with the label `app: mdviewer`.
-- **`template`**: This is the blueprint for the Pods. The `labels` here must match the `selector` above.
-- **`containerPort: 8080`**: Tells Kubernetes that the application inside the container is listening on port 8080.
-
-***
-
-#### ⚡ Resource Management: Requests vs. Limits
-
-The `resources` section is critical for cluster stability and ensuring your app has what it needs to perform.
-
-##### **1. `requests` — Guaranteed Resources**
-
-- This is the **minimum amount** of resources Kubernetes guarantees to the container.
-- The scheduler uses this value to decide which node to place the Pod on.
-- In your YAML:
-  - `cpu: "200m"`: Requests 200 "millicores" (0.2 of a CPU core).
-  - `memory: "256Mi"`: Requests 256 Mebibytes of RAM.
-
-##### **2. `limits` — Maximum Allowed Resources**
-
-- This is the **hard ceiling**. The container cannot consume more than this amount.
-- **CPU Limit**: If reached, the container is throttled (slowed down) but usually not killed.
-- **Memory Limit**: If reached, the container is **OOM Killed** (Out of Memory) and restarted by Kubernetes.
-- In your YAML:
-  - `cpu: "500m"`: Limits the container to 500 millicores (0.5 of a CPU core).
-  - `memory: "512Mi"`: Limits the container to 512 Mebibytes of RAM.
-
-***
-
-#### 🧠 Resource management Summary Table
-
-| Field | Purpose | Units |
-| :--- | :--- | :--- |
-| **Requests** | Minimum guaranteed; used for scheduling | `m` (1/1000th core), `Mi` (Mebibytes) |
-| **Limits** | Maximum allowed; prevents resource hogging | `m`, `Mi` |
-
-***
-
-## 3. Deploy via ArgoCD (Optional)
-
-If you have ArgoCD installed and want to manage the app via GitOps:
-Argo CD is in multipass K8s cluster: Uses the file argocd_config/mdviewer-app-multipass.yaml
-Argo CD is in minikube K8s cluster: Uses the file argocd_config/mdviewer-app-minikube.yaml
-
-```bash
-kubectl apply -f mdviewer-app.yaml
-```
-
-### Explanation of mdviewer-app.yaml
-
-An **Argo CD Application** is a Custom Resource Definition (CRD) that tells Argo CD how to manage a set of Kubernetes resources as a single unit. It bridges the gap between your Git repository (the source of truth) and your cluster.
+### Application Manifest
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mdviewer-app
+  name: mdviewer-app-multipass
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/nebupm/mdviewer.git
     targetRevision: HEAD
-    path: k8s_config
+    path: deploy/helm/mdviewer
+    helm:
+      valueFiles:
+        - values.yaml
   destination:
-    server: https://kubernetes.default.svc
+    name: k8slab
     namespace: mdviewer
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-    - CreateNamespace=true
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - Adopt=true
 ```
 
-***
+### Key Sections
 
-#### 🔍 Key Sections
+| Section | Purpose |
+| :--- | :--- |
+| `source.path` | Directory in the repo containing the Helm chart |
+| `source.helm.valueFiles` | Values files ArgoCD passes to Helm at render time |
+| `destination.name` | The registered cluster name in ArgoCD |
+| `syncPolicy.automated` | Enables auto-sync on Git changes |
+| `syncPolicy.automated.prune` | Deletes cluster resources removed from Git |
+| `syncPolicy.automated.selfHeal` | Reverts manual cluster changes to match Git |
 
-##### **1. `source` — Where the code lives**
+---
 
-- **`repoURL`**: The URL of the Git repository containing your manifests.
-- **`path`**: The directory inside the repository where the Kubernetes YAML files are stored (in this case, the `k8s_config/` folder).
-- **`targetRevision`**: Specifies which branch, tag, or commit to track (e.g., `HEAD` tracks the default branch).
+### Option 2: Manual Deployment with Helm
 
-##### **2. `destination` — Where the app goes**
+Use this when ArgoCD is not available. After CI runs and updates `values.yaml`, pull the latest changes and run Helm directly against your cluster.
 
-- **`server`**: The API address of the target Kubernetes cluster (`https://kubernetes.default.svc` refers to the same cluster Argo CD is running on).
-- **`namespace`**: The namespace where the application resources will be deployed (`mdviewer`).
+#### Install or Upgrade (default values)
 
-##### **3. `syncPolicy` — Automation & GitOps**
+```bash
+git pull
+helm upgrade --install mdviewer deploy/helm/mdviewer \
+  --namespace mdviewer \
+  --create-namespace
+```
 
-- **`automated`**: Enables Argo CD to automatically sync changes when it detects a difference between Git and the cluster.
-  - **`prune`**: Automatically deletes resources in the cluster that are no longer present in Git.
-  - **`selfHeal`**: Automatically overwrites manual changes made in the cluster to ensure it matches Git.
-- **`syncOptions: [CreateNamespace=true]`**: Tells Argo CD to create the target namespace if it doesn't already exist.
+#### Environment-Specific Deployments
 
-***
+```bash
+# Dev
+helm upgrade --install mdviewer deploy/helm/mdviewer \
+  --namespace mdviewer \
+  --create-namespace \
+  --values deploy/helm/mdviewer/values-dev.yaml
 
-#### 🧠 ArgoCD Deployment summary Table
+# Prod
+helm upgrade --install mdviewer deploy/helm/mdviewer \
+  --namespace mdviewer \
+  --create-namespace \
+  --values deploy/helm/mdviewer/values-prod.yaml
+```
 
-| Section | Purpose | Key Benefit |
-| :--- | :--- | :--- |
-| **Source** | Connects to Git | Single source of truth |
-| **Destination** | Targets the cluster | Deployment target management |
-| **Sync Policy** | Automates deployment | Eliminates manual intervention & prevents drift |
+#### Deploy a Specific Image Tag
 
-***
+If you want to deploy a particular build without editing `values.yaml`:
 
-## CI/CD & GitOps with GitHub Actions
+```bash
+helm upgrade --install mdviewer deploy/helm/mdviewer \
+  --namespace mdviewer \
+  --create-namespace \
+  --set image.tag=<git-sha>
+```
 
-This project uses GitHub Actions to automate the build and deployment process. Whenever code is pushed to the `main` branch, the pipeline automatically builds a new Docker image and updates the Kubernetes manifests.
+#### Dry Run (Inspect Rendered Manifests Before Applying)
 
-### GitHub Actions Workflow (`.github/workflows/deploy.yml`)
+```bash
+helm template mdviewer deploy/helm/mdviewer
+```
+
+---
+
+### Understanding `values.yaml`
+
+| Field | Purpose |
+| :--- | :--- |
+| `replicaCount` | Number of Pod replicas Kubernetes maintains |
+| `image.repository` | Docker image name |
+| `image.tag` | Image version; updated automatically by CI on every build |
+| `image.pullPolicy` | When to pull the image (`IfNotPresent`, `Always`) |
+| `service.type` | Service exposure type (`NodePort`, `ClusterIP`, `LoadBalancer`) |
+| `service.port` | Cluster-internal service port |
+| `service.targetPort` | Port the container application listens on |
+| `service.nodePort` | External port exposed on every node (NodePort only) |
+| `resources.requests` | Minimum resources guaranteed to the container; used by the scheduler |
+| `resources.limits` | Hard ceiling — CPU is throttled, memory excess causes OOM kill |
+
+#### How Traffic Flows (NodePort)
+
+```
+User → NodeIP:30080 (nodePort) → Service mdviewer-svc:80 (port) → Pod container:8080 (targetPort)
+```
+
+---
+
+## CI — Build and Push (GitHub Actions)
+
+The pipeline at `.github/workflows/ci.yml` is a **pure CI workflow** — it builds the Docker image, publishes it, and records the new image tag in the Helm chart. It does not deploy to any cluster. Deployment is handled separately, either by ArgoCD (recommended) or by running Helm manually.
+
+### What the Pipeline Does
+
+1. **Trigger:** Runs when `app/**`, `Dockerfile`, or `requirements.txt` changes on `main`.
+2. **Build & Push:** Builds a multi-platform Docker image tagged with the Git commit SHA and pushes it to Docker Hub.
+3. **Update Helm values:** Writes the new SHA into `image.tag` in `deploy/helm/mdviewer/values.yaml` using `sed`.
+4. **Commit back:** Pushes the updated `values.yaml` to the repo with `[skip ci]` to prevent the workflow re-triggering itself.
+
+After step 4, `values.yaml` in the repo is the single source of truth for which image version should be running. ArgoCD picks this up automatically; without ArgoCD, a manual `helm upgrade` is required (see [Option 2](#option-2-manual-deployment-with-helm) above).
+
+### Workflow (`.github/workflows/ci.yml`)
 
 ```yaml
-name: CI/CD Pipeline
+name: CI — Build and Push
 
 on:
   push:
@@ -412,158 +243,121 @@ on:
       - 'app/**'
       - 'Dockerfile'
       - 'requirements.txt'
-      - 'k8s_config/**'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      - '.github/workflows/ci.yml'
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v6
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             deneasta/mdviewer:${{ github.sha }}
             deneasta/mdviewer:latest
 
-      - name: Update Kubernetes Deployment
+      - name: Update image tag in Helm values
         run: |
-          sed -i 's|image: deneasta/mdviewer:.*|image: deneasta/mdviewer:${{ github.sha }}|' k8s_config/deployment.yaml
-          
-      - name: Commit and Push manifest change
+          sed -i 's|tag: ".*"|tag: "${{ github.sha }}"|' deploy/helm/mdviewer/values.yaml
+
+      - name: Commit and push Helm values change
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add k8s_config/deployment.yaml
+          git add deploy/helm/mdviewer/values.yaml
           git commit -m "chore: update image tag to ${{ github.sha }} [skip ci]"
           git push
 ```
 
-***
+### Required Setup
 
-### 🔍 How the Pipeline Works
+#### GitHub Secrets
 
-The workflow implements a **GitOps** flow:
+Go to **Settings > Secrets and variables > Actions** and add:
 
-1. **Trigger (`on: push`)**: The pipeline runs only when changes are made to the application code (`app/`), the `Dockerfile`, or the Kubernetes manifests (`k8s_config/`).
-2. **Checkout**: It pulls the latest code from the repository.
-3. **Docker Build & Push**:
-    - It logs into Docker Hub using secrets.
-    - It builds a new image and tags it with the **unique Git Commit SHA** (`${{ github.sha }}`). This ensures every build is traceable to a specific code change.
-4. **Manifest Update (`sed`)**:
-    - The pipeline modifies `k8s_config/deployment.yaml` directly, replacing the old image tag with the new one.
-5. **Git Commit & Push**:
-    - The updated manifest is committed back to the repository by the `github-actions[bot]`.
-    - The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
-6. **Argo CD Sync**:
-    - Because Argo CD is watching the `k8s_config/` directory in your repo (as configured in `mdviewer-app.yaml`), it detects the change in `deployment.yaml`.
-    - Argo CD automatically pulls the new image into your Kubernetes cluster.
+- `DOCKERHUB_USERNAME` — your Docker Hub username
+- `DOCKERHUB_TOKEN` — a Docker Hub Personal Access Token
 
-### 🛠️ Setup Requirements
+#### Workflow Permissions
 
-To use this workflow, you must configure the following:
+The `GITHUB_TOKEN` needs write access to commit the manifest update back:
 
-#### 1. GitHub Secrets
+1. Go to **Settings > Actions > General**
+2. Under **Workflow permissions**, select **Read and write permissions**
+3. Click **Save**
 
-Go to **Settings > Secrets and variables > Actions**. Ensure you are on the **Secrets** tab (this is for sensitive data) and click **New repository secret** to add:
+---
 
-- `DOCKERHUB_USERNAME`: Your Docker Hub username.
-- `DOCKERHUB_TOKEN`: A Personal Access Token from Docker Hub.
+## Updating & Managing the Application
 
-*Note: Do not add these to the "Variables" tab, as secrets are masked in logs and more secure.*
+### With ArgoCD
 
-#### 2. Workflow Permissions (Critical)
+Push to `main`. The CI pipeline builds a new image and commits the updated `image.tag` into `deploy/helm/mdviewer/values.yaml`. ArgoCD detects the Git change and runs `helm upgrade` automatically — no manual steps required.
 
-The workflow uses the built-in `GITHUB_TOKEN` to commit manifest changes. By default, this token is often restricted to read-only. **You must enable write access:**
+### Without ArgoCD (Manual)
 
-1. Navigate to your repository on GitHub.
-2. Go to **Settings > Actions > General**.
-3. Scroll down to the **Workflow permissions** section.
-4. Select **Read and write permissions**.
-5. Click **Save**.
-
-***
-
-## 🔄 Updating & Managing the Application
-
-### Method 1: GitOps (Automated with Argo CD)
-Simply push your code to the `main` branch. The GitHub Action will build the image, update the tag in `k8s_config/deployment.yaml`, and Argo CD will sync the new version automatically.
-
-### Method 2: Manual Update (No GitOps/Argo CD)
-If you are managing the cluster manually, use one of these two approaches:
-
-#### A. The Declarative Way (Recommended)
-This keeps your local manifests (the "source of truth") in sync with the cluster.
-1. Update the `image:` tag in `k8s_config/deployment.yaml`.
-2. Apply the change:
-
-   ```bash
-   kubectl apply -f k8s_config/deployment.yaml -n mdviewer
-   ```
-
-#### B. The Imperative Way (Fastest)
-Use this for quick updates without editing files. Note that this creates "drift" between your YAML and the cluster.
+Push to `main` to trigger CI, then once the CI commit lands, pull and run Helm:
 
 ```bash
-kubectl set image deployment/mdviewer mdviewer=deneasta/mdviewer:<new-id> -n mdviewer
+git pull
+helm upgrade mdviewer deploy/helm/mdviewer --namespace mdviewer
+```
+
+See [Option 2: Manual Deployment with Helm](#option-2-manual-deployment-with-helm) for environment-specific and tag-override commands.
+
+### Other Management Commands
+
+```bash
+# Force a redeploy of the same image (e.g. to pick up ConfigMap changes)
+kubectl rollout restart deployment/mdviewer -n mdviewer
+
+# Roll back to the previous Helm release
+helm rollback mdviewer -n mdviewer
 ```
 
 ---
 
-### Other Management Commands
-- **Rolling Restart:** If you need to force a redeploy of the *same* tag (e.g., to pick up changes in Secrets or ConfigMaps without changing the image):
+## Verification & Health Checks
 
-  ```bash
-  kubectl rollout restart deployment/mdviewer -n mdviewer
-  ```
-
----
-
-## 🔍 Verification & Health Checks
-
-Follow these steps to ensure the deployment and service are installed correctly:
-
-### 1. Check Deployment & Pod Status
-Verify that the Deployment is scaled correctly and Pods are `Running` and `1/1 Ready`.
+### 1. Check Deployment and Pod Status
 
 ```bash
 kubectl get deployment,pods -n mdviewer
 ```
 
-### 2. Verify Service & Endpoints
-The Service must exist and have active Endpoints (the internal IPs of your Pods). If Endpoints is `<none>`, the service selector doesn't match your pod labels.
+Pods should be `Running` and `1/1 Ready`.
+
+### 2. Verify Service and Endpoints
 
 ```bash
 kubectl get service,endpoints -n mdviewer
 ```
 
-### 3. Check for Errors (Describe)
-If pods are failing, check the Events at the bottom of the describe output:
+If `Endpoints` shows `<none>`, the service selector does not match the pod labels.
+
+### 3. Inspect Events (for failing pods)
 
 ```bash
 kubectl describe pod -l app=mdviewer -n mdviewer
 ```
 
-### 4. Application Health Check
-Verify the service is responding correctly over the network:
+### 4. HTTP Health Check
 
 ```bash
-# Check HTTP headers to see if the server returns 200 OK
 curl -I http://<Node-IP>:30080
 ```
 
@@ -573,192 +367,107 @@ curl -I http://<Node-IP>:30080
 kubectl logs -l app=mdviewer -n mdviewer --tail 20
 ```
 
+---
+
 ## Accessing the Application
 
-Once the application is deployed and the pods are running, you can access the web interface using one of the following methods:
-
-### Method 1: Using Minikube Service (Recommended)
-
-This is the easiest way to get a clickable URL that automatically handles the network mapping for you.
+### Minikube — Service URL
 
 ```bash
 minikube service mdviewer-svc -n mdviewer --url
 ```
 
-### Method 2: Kubernetes Port Forwarding
-
-If the service URL is not reachable or you prefer a stable localhost address, use port-forwarding to map the service directly to your machine.
+### Port Forwarding (any cluster)
 
 ```bash
-# This maps your local port 8080 to the Service port 80
 kubectl port-forward svc/mdviewer-svc -n mdviewer 8080:80
 ```
 
-Then visit: **<http://localhost:8080>** in your browser.
+Then visit: http://localhost:8080
 
-### Method 3: Direct NodePort Access when using minikube due to Docker driver (macOS/Docker Limitations)
+### NodePort — Minikube with Docker driver (macOS)
 
-On macOS/Windows using the `docker` driver, the NodePort is exposed on the Minikube node (container) but is **not directly routable** from your host machine.
-
-To make it work, you must start a tunnel in a separate terminal:
+Start a tunnel in a separate terminal, then access via the Minikube IP:
 
 ```bash
-# This exposes the NodePort to your host
 minikube tunnel
+# then: http://$(minikube ip):30080
 ```
 
-Once the tunnel is running, you can access the app at: **http://$(minikube ip):30080**
+### NodePort — General K8s Cluster (Multipass)
 
-### Method 4: Direct NodePort Access when using a general K8s cluster
+Access from any node IP on port `30080`:
 
-Since your mdviewer-svc is configured as a NodePort service on port 30080, it is automatically exposed on every node in your Multipass cluster.
+| Node | IP |
+| :--- | :--- |
+| k8s-m1 | 192.168.2.30 |
+| k8s-m2 | 192.168.2.31 |
+| k8s-m3 | 192.168.2.32 |
+| k8s-w1 | 192.168.2.33 |
+| k8s-w2 | 192.168.2.34 |
 
-#### 🎯 Strategic Choice
+Example: http://192.168.2.30:30080
 
-You can access the app from your Mac browser using the IP address of any of your 5 VMs.
+Traffic hits the `kube-proxy` on whichever node you target and is routed to the running pod, regardless of which node the pod is actually on.
 
-1. Pick any Node IP:
-   - k8s-m1: 192.168.2.30
-   - k8s-m2: 192.168.2.31
-   - k8s-m3: 192.168.2.32
-   - k8s-w1: 192.168.2.33
-   - k8s-w2: 192.168.2.34
-
-2. The Access URL:
-  Open your browser and go to:
-  👉 <http://192.168.2.30:30080> (<http://192.168.2.30:30080>)
-
-  (Any of the worker or manager IPs will work with that port!)
-
-🕵️ Why This Works:
-
-- NodePort: Kubernetes maps a port (30000-32767) on all nodes to your service.
-- Routing: When you hit 192.168.2.30:30080, the kube-proxy on that node sees the traffic and routes it to the actual pod (even if the pod is running on a different node
-     like k8s-w2).
+---
 
 ## Troubleshooting
 
-### Issue: "Failed to load live state: namespace 'mdviewer' for Deployment 'mdviewer' is not managed"
+### "Failed to load live state: namespace 'mdviewer' is not managed"
 
-This error occurs when Argo CD is configured to only manage specific namespaces on a cluster, and the target namespace (in this case, `mdviewer`) is not in that permitted list.
+ArgoCD is restricted to specific namespaces and `mdviewer` is not in that list.
 
-#### 🔍 Diagnosis (Root Cause Analysis)
+1. Check if the cluster is namespace-restricted:
 
-1. **Check Application Status**:
+   ```bash
+   argocd cluster list
+   ```
 
-    ```bash
-    kubectl get application -n argocd mdviewer-app -o yaml
-    ```
+   A `(1 namespaces)` annotation next to the server URL confirms the restriction.
 
-    Confirm the error message is present in the `status.conditions` block.
+2. Remove the restriction from the cluster secret:
 
-2. **Check Cluster Management Scope**:
-    Verify if the cluster is restricted to specific namespaces using the Argo CD CLI:
+   ```bash
+   kubectl get secrets -n argocd -l argocd.argoproj.io/secret-type=cluster
+   kubectl patch secret <SECRET_NAME> -n argocd \
+     --type='json' \
+     -p='[{"op": "remove", "path": "/data/namespaces"}]'
+   ```
 
-    ```bash
-    argocd cluster list
-    ```
+3. Force a hard refresh:
 
-    If you see `(1 namespaces)` next to the server URL (e.g., `https://kubernetes.default.svc`), it means management is restricted.
+   ```bash
+   kubectl patch application mdviewer-app-multipass -n argocd \
+     --type merge \
+     -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+   ```
 
-3. **Inspect Cluster Secret**:
-    Find the secret that stores the cluster configuration:
+### Application not syncing after a push
 
-    ```bash
-    kubectl get secrets -n argocd -l argocd.argoproj.io/secret-type=cluster
-    ```
+1. Check for sync errors:
 
-    If you inspect the YAML, a `namespaces` field under `data` indicates that restricted management is active.
+   ```bash
+   argocd app get mdviewer-app-multipass
+   ```
 
-#### 🛠️ Remedial Action
+2. Compare commit hashes:
 
-To allow Argo CD to manage all namespaces on the cluster (including `mdviewer`), remove the restriction from the cluster secret:
+   ```bash
+   argocd app get mdviewer-app-multipass | grep "Sync Status"
+   git ls-remote https://github.com/nebupm/mdviewer.git HEAD
+   ```
 
-1. **Patch the Cluster Secret**:
-    Replace `<SECRET_NAME>` with the name found in the previous step:
+   If they match but the cluster hasn't updated, the issue is likely in the rendered Helm chart (e.g. image tag not propagating).
 
-    ```bash
-    kubectl patch secret <SECRET_NAME> -n argocd --type='json' -p='[{"op": "remove", "path": "/data/namespaces"}]'
-    ```
+3. Force an immediate refresh:
 
-2. **Verify the Change**:
-    Ensure the namespace count is no longer shown in the cluster list:
+   ```bash
+   argocd app get mdviewer-app-multipass --refresh
+   ```
 
-    ```bash
-    argocd cluster list
-    ```
+4. Inspect the diff:
 
-3. **Trigger a Hard Refresh**:
-    Force Argo CD to reconcile the application with the new permissions:
-
-    ```bash
-    kubectl patch application mdviewer-app -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
-    ```
-
-### Issue: Application is not syncing or not reflecting recent changes
-
-If you have pushed changes to GitHub but they are not appearing in your cluster, follow these steps:
-
-#### 1. Check for Sync Errors
-The most common cause is a manifest error (like a YAML typo) that prevents Argo CD from applying the changes.
-
-```bash
-argocd app get mdviewer-app-multipass
-```
-
-*   **Look for:** `Sync Status`. If it says `OutOfSync`, look at the `Condition` or `Message` field at the bottom.
-*   **Look for:** `Health Status`. If it's `Degraded` or `Missing`, it means the resources couldn't be created.
-
-#### 2. Verify the Commit Hash
-Compare the commit Argo CD *thinks* is the latest with what is actually on GitHub:
-
-```bash
-# Get the hash Argo CD is looking at
-argocd app get mdviewer-app-multipass | grep "Sync Status"
-
-# Get the latest hash from GitHub
-git ls-remote https://github.com/nebupm/mdviewer.git HEAD
-```
-
-*   **If the hashes match:** Argo CD has seen your change. If the app hasn't updated, the problem is likely in your manifest (e.g., the image tag wasn't updated in `k8s_config/deployment.yaml`).
-*   **If the hashes differ:** Argo CD hasn't pulled your latest commit yet (it polls every 3 minutes by default).
-
-#### 3. Force a Refresh
-To force Argo CD to check GitHub immediately:
-
-```bash
-argocd app get mdviewer-app-multipass --refresh
-```
-
-#### 4. Check Diff (The "Why")
-If the app is `OutOfSync`, you can see exactly what Argo CD wants to change:
-
-```bash
-argocd app diff mdviewer-app-multipass
-```
-
-## GitOps & Application Deployment (ArgoCD)
-
-Managed via an ArgoCD instance running on **Minikube**.
-
-### Deployment Manifests
-
-- **`k8s_app/mdviewer/argocd_config/mdviewer-app-minikube.yaml`**: Targets local Minikube.
-- **`k8s_app/mdviewer/argocd_config/mdviewer-app-multipass.yaml`**: Targets the Multipass cluster.
-
-### 4. Accessing Applications
-
-Applications deployed to the Multipass cluster are exposed via **NodePort**.
-
-- **mdviewer**: Accessible at `http://<Any-Node-IP>:30080`
-
-## Verification
-
-To verify the Multipass cluster status:
-
-```bash
-# Switch to Multipass context
-kubectl config use-context kubernetes-admin@kubernetes
-kubectl get nodes
-kubectl get pods -A
-```
+   ```bash
+   argocd app diff mdviewer-app-multipass
+   ```
