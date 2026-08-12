@@ -8,7 +8,7 @@ image:
   repository: deneasta/mdviewer
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "8e4f266095b32ca9b9dcca2bb498ae03a4d7386a"
+  tag: "fc7202a41c83a7d2525494aa6d6559abb6dcfa05"
 
 namespace: mdviewer
 
